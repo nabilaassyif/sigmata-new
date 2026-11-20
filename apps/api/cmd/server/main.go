@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"os"
@@ -10,7 +11,7 @@ import (
 	"time"
 )
 
-func newHandler() http.Handler {
+func newHandler(v verifier) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -21,12 +22,22 @@ func newHandler() http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		http.Error(w, `{"status":"not_ready"}`, http.StatusServiceUnavailable)
 	})
+	mux.Handle("GET /api/me", v.authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		id := r.Context().Value(identityKey{}).(*identity)
+		_ = json.NewEncoder(w).Encode(map[string]any{"subject": id.Subject, "roles": id.RealmAccess.Roles})
+	})))
 	return mux
 }
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	server := &http.Server{Addr: ":8080", Handler: newHandler(), ReadHeaderTimeout: 5 * time.Second}
+	v := verifier{issuer: os.Getenv("OIDC_ISSUER"), jwksURL: os.Getenv("OIDC_JWKS_URL"), audience: os.Getenv("OIDC_AUDIENCE"), client: &http.Client{Timeout: 5 * time.Second}}
+	if v.issuer == "" || v.jwksURL == "" || v.audience == "" {
+		logger.Error("OIDC_ISSUER, OIDC_JWKS_URL and OIDC_AUDIENCE are required")
+		os.Exit(1)
+	}
+	server := &http.Server{Addr: ":8080", Handler: newHandler(v), ReadHeaderTimeout: 5 * time.Second}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	go func() {

@@ -1,24 +1,19 @@
 # SIGMATA
 
-This repository contains the Vite frontend and an **incomplete backend foundation**. The Go service currently exposes only process health; it deliberately reports not ready. Complaint endpoints, authentication, database migrations, governance, SLA, and Go-to-inference integration are not implemented. Do not deploy it as a working complaint system.
-
-The separate FastAPI service reports process health and an unavailable model. Predictions require human review and contain no fabricated classification. No model or LLM fallback is configured.
+This repository is an incomplete backend foundation. Complaint endpoints, complaint permissions, database migrations, and Go-to-inference integration are not implemented. The API deliberately reports not ready. Do not deploy it as a working complaint system.
 
 ## Local containers
 
-Install Docker with Compose, copy `.env.example` to `.env`, and replace the password with a unique development value. The password is only applied when the Postgres volume is initialized; changing it later requires changing the database user's password separately. Then run:
+Copy `.env.example` to `.env`, set unique PostgreSQL and Keycloak admin passwords, then run `docker compose up --build -d`. The API is at http://localhost:8080, Keycloak at http://localhost:8081, and Redis, PostgreSQL and inference are internal. Data persists in named volumes. Keycloak uses its development file database and HTTP; this setup is for local development only. Production requires a supported persistent database, HTTPS, an appropriate hostname, managed secrets, and a deployment-specific configuration.
 
-```sh
-docker compose up --build -d
-docker compose ps
-docker compose logs -f api
-docker compose logs -f inference
-```
+Keycloak imports `infra/keycloak/sigmata-realm.json` only when the realm does not already exist. Editing the file does not update an existing realm; manage an existing realm through Keycloak administration or intentionally recreate the local Keycloak data after backing it up. The bootstrap admin password applies on initial creation, not as an automatic password update. Postgres credentials similarly apply only on initial database creation.
 
-The API listens on `127.0.0.1:8080`; the database, Redis, and inference service are internal only. Add a local Compose override if direct development access is needed, and bind its ports to `127.0.0.1`. Named volumes persist database and Redis data. The health checks report process availability; model readiness is available separately at `/readyz`. Image tags should be regularly updated and scanned; tags are not immutable digests. The PostgreSQL/PostGIS and Redis versions follow the requested major versions.
+## Identity and API
 
-Both application images have separate builder and non-root runner stages. Alpine may not support future model dependencies with prebuilt wheels; reassess the Python base when the actual GRACE-LAKSA runtime is integrated.
+The `sigmata` realm has public authorization-code clients `citizenWeb` and `internalWeb`, both requiring PKCE S256, and realm roles `citizen`, `operator`, `opdStaff`, and `admin`. Redirects are local development placeholders: citizen uses `http://localhost:5173/*` and internal uses `http://localhost:5174/*`; configure exact application callbacks and origins for deployment. The web application does not yet implement OIDC login or registration.
 
-## Local development
+Realm self-registration is enabled and grants the citizen role through the default role. Staff accounts and privileged role assignments must be created by a trusted Keycloak administrator; never delegate role-management permissions to citizens. Registration is realm-wide: a citizen can also register or authenticate through the internal client, but registration does not grant staff roles. The internal client requires password and OTP, including OTP setup on first login. This is role separation, not separate identity stores. If policy requires preventing citizens from even using the internal client or registration entry point, implement and verify a controlled registration/client-access flow or use separate realms.
 
-The frontend lives in `apps/web` and needs only Node.js. The backend does not yet implement the frontend contract or a Vite proxy. To run the current Go process, run `go run ./cmd/server` in `apps/api`. For inference, create a Python 3.11+ virtual environment in `services/inference`, install `pip install -e '.[test]'`, and run `uvicorn app.main:app --port 8001`. Run tests with `pytest` from that directory and `go test ./...` from `apps/api`.
+`GET /api/me` requires a Keycloak access token with the `sigmata-api` audience and returns its subject and realm roles. The API verifies RS256 signatures against Keycloak JWKS, issuer, audience, expiry, token type and authorized client. Health endpoints remain public. The reusable `requireRoles` middleware additionally requires the internal client and a matching realm role; apply it after authentication to every future privileged API route. There are no staff routes or role-assignment endpoints yet, and complaint-level authorization is not implemented. JWT validation is offline with respect to user/session revocation: issued tokens remain valid until expiry. Keys are retrieved from Keycloak on each request, so Keycloak must be reachable.
+
+To run the Go API outside Compose, set `OIDC_ISSUER=http://localhost:8081/realms/sigmata`, `OIDC_JWKS_URL=http://localhost:8081/realms/sigmata/protocol/openid-connect/certs`, and `OIDC_AUDIENCE=sigmata-api`, then run `go run ./cmd/server` in `apps/api`. Run its tests with `go test ./...`. The frontend is in `apps/web`. The separate FastAPI inference service reports process health and an unavailable model; predictions require human review.

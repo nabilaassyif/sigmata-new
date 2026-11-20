@@ -26,6 +26,21 @@ services:
       timeout: 5s
       retries: 5
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.5.7
+    command: ['start-dev', '--import-realm']
+    restart: unless-stopped
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?Set KEYCLOAK_ADMIN_PASSWORD in .env}
+      KC_HOSTNAME: http://localhost:8081
+      KC_DB: dev-file
+    ports:
+      - '127.0.0.1:8081:8080'
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+      - ./infra/keycloak/sigmata-realm.json:/opt/keycloak/data/import/sigmata-realm.json:ro
+
   inference:
     build: ./services/inference
     restart: unless-stopped
@@ -48,6 +63,9 @@ services:
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       REDIS_ADDR: redis:6379
       INFERENCE_URL: http://inference:8000
+      OIDC_ISSUER: http://localhost:8081/realms/sigmata
+      OIDC_JWKS_URL: http://keycloak:8080/realms/sigmata/protocol/openid-connect/certs
+      OIDC_AUDIENCE: sigmata-api
     ports:
       - '127.0.0.1:8080:8080'
     depends_on:
@@ -64,3 +82,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  keycloak_data:
