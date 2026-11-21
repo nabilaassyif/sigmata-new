@@ -95,7 +95,7 @@
         }
       ],
       "authenticationFlowBindingOverrides": {
-        "browser": "internal-browser"
+        "browser": "aa9fef30-fd7d-448d-8b28-f3bc126c08b8"
       }
     }
   ],
@@ -113,7 +113,8 @@
           "userSetupAllowed": false,
           "autheticatorFlow": true
         }
-      ]
+      ],
+      "id": "aa9fef30-fd7d-448d-8b28-f3bc126c08b8"
     },
     {
       "alias": "internal-forms",

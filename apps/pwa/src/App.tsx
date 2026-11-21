@@ -36,7 +36,7 @@ function App() {
 
   return (
     <main className="mx-auto max-w-xl px-5 py-12 text-black">
-      <h1 className="text-2xl font-bold">SIGMATA Citizen — Auth Test</h1>
+      <h1 className="text-2xl font-bold">SIGMATA Citizen - Auth Test</h1>
       <p className="mt-2 text-sm text-neutral-600">Test the shared Go authentication service.</p>
 
       <section className="mt-8 border border-black p-5" aria-labelledby="sessionTitle">
