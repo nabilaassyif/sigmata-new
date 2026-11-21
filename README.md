@@ -1,10 +1,16 @@
 # SIGMATA
 
-This repository is an incomplete backend foundation. Complaint endpoints, complaint permissions, database migrations, and Go-to-inference integration are not implemented. The API deliberately reports not ready. Do not deploy it as a working complaint system.
+This repository is an incomplete backend foundation. Complaint endpoints, complaint permissions, database migrations, and persisted complaint routing are not implemented. The API deliberately reports not ready. Do not deploy it as a working complaint system.
+
+The inference service loads a GRACE bundle from a persistent Docker volume. Compose downloads the pinned revision from the private `LeBabyOx/grace-laksa` Hugging Face repository on first startup. The download requires a Hugging Face read token with access to that repository. Until a complete bundle loads, the service returns an unavailable result and its `/readyz` endpoint returns 503.
+
+The internal staff preview route `POST /api/internal/inference/predict` forwards the supplied complaint text to inference after session, origin, and staff-role checks. It does not read, create, assign, or modify a complaint. Category and OPD labels are suggestions for human review; application UUIDs are not yet mapped. The complaint workflow and its object-level authorization remain unimplemented.
+
+The preview accepts JSON with `complaintId`, `municipalityId`, and `description`, plus optional `geospatialContext` containing `latitude` and `longitude`. Both IDs must be UUIDs. The model was trained on Tangerang complaints and retrieves from a fixed historical training snapshot. Its confidence is the lower of the two heads' maximum softmax scores and is not calibrated.
 
 ## Local containers
 
-Copy `.env.example` to `.env`, set unique PostgreSQL and Keycloak admin passwords, then run `docker compose up --build -d`. The API is at http://localhost:8080, Keycloak at http://localhost:8081, and Redis, PostgreSQL and inference are internal. Data persists in named volumes. Keycloak uses its development file database and HTTP; this setup is for local development only. Production requires a supported persistent database, HTTPS, an appropriate hostname, managed secrets, and a deployment-specific configuration.
+Copy `.env.example` to `.env`, set unique PostgreSQL and Keycloak admin passwords, and set `HF_TOKEN` to a Hugging Face read token authorized for the private model repository. Then run `docker compose up --build -d`. The first startup downloads the model; subsequent starts reuse it. Give each developer their own authorized token and do not commit `.env`. Set `GRACE_MODEL_REVISION` to a full commit SHA to intentionally use another model revision. The API is at http://localhost:8080, Keycloak at http://localhost:8081, and Redis, PostgreSQL and inference are internal. Data persists in named volumes. Keycloak uses its development file database and HTTP; this setup is for local development only. Production requires a supported persistent database, HTTPS, an appropriate hostname, managed secrets, and a deployment-specific configuration.
 
 Keycloak imports `infra/keycloak/sigmata-realm.json` only when the realm does not already exist. Editing the file does not update an existing realm; manage an existing realm through Keycloak administration or intentionally recreate the local Keycloak data after backing it up. The bootstrap admin password applies on initial creation, not as an automatic password update. Postgres credentials similarly apply only on initial database creation.
 
@@ -16,7 +22,7 @@ The realm has `citizen`, `operator`, `opdStaff`, and `admin` roles. Self-registr
 
 The local clients allow exact callback URLs: `http://localhost:5173/api/auth/citizen/callback` and `http://localhost:5174/api/auth/internal/callback`. Realm imports do not update existing realms: update existing client redirect and post-logout redirect settings in Keycloak before testing these routes.
 
-For a Go API outside Compose, set `REDIS_ADDR`, `OIDC_ISSUER`, `OIDC_JWKS_URL`, `OIDC_TOKEN_URL`, and `OIDC_AUDIENCE`. The Keycloak issuer must be the browser-facing realm URL; the JWKS and token URLs must be reachable by Go. Set `CITIZEN_ORIGIN` and `INTERNAL_ORIGIN` for the frontend origins, and register their corresponding callback and logout URLs in Keycloak. Run `go test ./...` in `apps/api`.
+For a Go API outside Compose, set `REDIS_ADDR`, `OIDC_ISSUER`, `OIDC_JWKS_URL`, `OIDC_TOKEN_URL`, and `OIDC_AUDIENCE`. Set `INFERENCE_URL` to the inference service URL for the staff preview. The Keycloak issuer must be the browser-facing realm URL; the JWKS and token URLs must be reachable by Go. Set `CITIZEN_ORIGIN` and `INTERNAL_ORIGIN` for the frontend origins, and register their corresponding callback and logout URLs in Keycloak. Run `go test ./...` in `apps/api`.
 
 Production requires HTTPS, Secure cookies, a trusted same-origin reverse proxy for each frontend and its `/api` routes, appropriate Keycloak hostname settings, and secured Redis storage and transport. Redis contains access and refresh tokens, so restrict access and protect backups. The server rejects unsafe authenticated requests and logout when their Origin does not match the configured frontend origin. Apply session and authorization middleware to every future protected route; complaint-level authorization is not yet implemented. The current clients are public and use PKCE; confidential BFF clients with managed secrets should be configured for production.
 

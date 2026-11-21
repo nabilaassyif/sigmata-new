@@ -26,6 +26,7 @@ type bff struct {
 	secureCookie     bool
 	apps             map[string]bffApp
 	httpClient       *http.Client
+	inference        *inferenceClient
 }
 type loginState struct {
 	Verifier string `json:"verifier"`

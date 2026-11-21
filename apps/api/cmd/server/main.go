@@ -18,7 +18,6 @@ func newHandler(v verifier, backends ...*bff) http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"status":"ok"}`))
 	})
-	// The application is deliberately not ready until its persistence and auth exist.
 	mux.HandleFunc("GET /readyz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		http.Error(w, `{"status":"not_ready"}`, http.StatusServiceUnavailable)
@@ -29,6 +28,7 @@ func newHandler(v verifier, backends ...*bff) http.Handler {
 		mux.HandleFunc("GET /api/auth/{app}/callback", backend.callback)
 		mux.Handle("GET /api/auth/{app}/session", backend.authenticateSession(http.HandlerFunc(backend.current)))
 		mux.HandleFunc("POST /api/auth/{app}/logout", backend.logout)
+		mux.Handle("POST /api/{app}/inference/predict", backend.authenticateSession(requireRoles(http.HandlerFunc(backend.predictPreview), "operator", "opdStaff", "admin")))
 	}
 	return mux
 }
@@ -58,7 +58,7 @@ func main() {
 		os.Exit(1)
 	}
 	redisClient := redis.NewClient(&redis.Options{Addr: redisAddr})
-	backend := &bff{verifier: v, redis: redisStore{client: redisClient}, issuer: v.issuer, tokenURL: tokenURL, secureCookie: secureCookie, httpClient: &http.Client{Timeout: 5 * time.Second}, apps: map[string]bffApp{"citizen": {clientID: "citizenWeb", origin: citizenOrigin}, "internal": {clientID: "internalWeb", origin: internalOrigin}}}
+	backend := &bff{verifier: v, redis: redisStore{client: redisClient}, issuer: v.issuer, tokenURL: tokenURL, secureCookie: secureCookie, httpClient: &http.Client{Timeout: 5 * time.Second}, inference: newInferenceClient(os.Getenv("INFERENCE_URL")), apps: map[string]bffApp{"citizen": {clientID: "citizenWeb", origin: citizenOrigin}, "internal": {clientID: "internalWeb", origin: internalOrigin}}}
 	defer redisClient.Close()
 	server := &http.Server{Addr: ":8080", Handler: newHandler(v, backend), ReadHeaderTimeout: 5 * time.Second}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

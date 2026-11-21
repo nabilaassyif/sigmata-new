@@ -41,10 +41,31 @@ services:
       - keycloak_data:/opt/keycloak/data
       - ./infra/keycloak/sigmata-realm.json:/opt/keycloak/data/import/sigmata-realm.json:ro
 
+  model-init:
+    image: sigmata-inference:local
+    build: ./services/inference
+    user: '0:0'
+    command: ['python', '-m', 'app.downloadModel']
+    environment:
+      GRACE_MODEL_ROOT: /app/model
+      GRACE_MODEL_REPO: LeBabyOx/grace-laksa
+      GRACE_MODEL_REVISION: ${GRACE_MODEL_REVISION:-c0b7110362767a5adcfc66af09011c60a13fa65a}
+      HF_TOKEN: ${HF_TOKEN:-}
+    volumes:
+      - grace_model:/app/model
+
   inference:
+    image: sigmata-inference:local
     build: ./services/inference
     restart: unless-stopped
     init: true
+    environment:
+      GRACE_ARTIFACTS: /app/model/${GRACE_MODEL_REVISION:-c0b7110362767a5adcfc66af09011c60a13fa65a}
+    volumes:
+      - grace_model:/app/model:ro
+    depends_on:
+      model-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ['CMD', 'python', '-c', "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
       interval: 10s
@@ -87,3 +108,4 @@ volumes:
   postgres_data:
   redis_data:
   keycloak_data:
+  grace_model:
