@@ -66,6 +66,10 @@ services:
       OIDC_ISSUER: http://localhost:8081/realms/sigmata
       OIDC_JWKS_URL: http://keycloak:8080/realms/sigmata/protocol/openid-connect/certs
       OIDC_AUDIENCE: sigmata-api
+      OIDC_TOKEN_URL: http://keycloak:8080/realms/sigmata/protocol/openid-connect/token
+      CITIZEN_ORIGIN: http://localhost:5173
+      INTERNAL_ORIGIN: http://localhost:5174
+      SESSION_COOKIE_SECURE: "false"
     ports:
       - '127.0.0.1:8080:8080'
     depends_on:

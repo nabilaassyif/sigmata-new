@@ -1,121 +1,74 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useCallback, useEffect, useState } from 'react'
+
+type Session = { subject: string; roles: string[] | null }
+type SessionStatus = 'loading' | 'signedIn' | 'signedOut' | 'error'
+
+const authPath = '/api/auth/internal'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [session, setSession] = useState<Session | null>(null)
+  const [status, setStatus] = useState<SessionStatus>('loading')
+
+  const checkSession = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const response = await fetch(`${authPath}/session`, { credentials: 'same-origin', cache: 'no-store', signal })
+      if (response.status === 401) {
+        setSession(null)
+        setStatus('signedOut')
+        return
+      }
+      if (!response.ok) throw new Error('Session request failed')
+      const data: Session = await response.json()
+      setSession(data)
+      setStatus('signedIn')
+    } catch {
+      if (signal?.aborted) return
+      setSession(null)
+      setStatus('error')
+    }
+  }, [])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    void checkSession(controller.signal)
+    return () => controller.abort()
+  }, [checkSession])
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <main className="mx-auto max-w-xl px-5 py-12 text-black">
+      <h1 className="text-2xl font-bold">SIGMATA Staff — Auth Test</h1>
+      <p className="mt-2 text-sm text-neutral-600">Test the shared Go authentication service.</p>
+
+      <section className="mt-8 border border-black p-5" aria-labelledby="sessionTitle">
+        <h2 id="sessionTitle" className="text-lg font-semibold">Session</h2>
+        <div className="mt-3 text-sm" role="status" aria-live="polite">
+          {status === 'loading' && <p>Checking session...</p>}
+          {status === 'signedOut' && <p>Not signed in.</p>}
+          {status === 'error' && <p>Could not check the session. Make sure the API and Redis are running.</p>}
+          {status === 'signedIn' && session && (
+            <div className="space-y-2 break-words">
+              <p>Signed in.</p>
+              <p><strong>Subject:</strong> {session.subject}</p>
+              <p><strong>Roles:</strong> {session.roles?.join(', ') || 'None'}</p>
+            </div>
+          )}
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
+        <button type="button" className="mt-4 border border-black px-3 py-2 text-sm hover:bg-neutral-100 disabled:opacity-50" disabled={status === 'loading'} onClick={() => { setStatus('loading'); void checkSession() }}>
+          Check session
         </button>
       </section>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      <section className="mt-6" aria-label="Authentication actions">
+        <div className="flex flex-wrap items-center gap-3">
+          <a href={`${authPath}/login`} className="inline-block bg-black px-4 py-2 text-sm text-white hover:bg-neutral-800">Log in</a>
+          
+          <form action={`${authPath}/logout`} method="post">
+            <button type="submit" className="border border-black px-4 py-2 text-sm hover:bg-neutral-100 disabled:opacity-50" disabled={status !== 'signedIn'}>Log out</button>
+          </form>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
+        <p className="mt-4 text-sm text-neutral-600">Staff accounts are created by an administrator.</p>
       </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    </main>
   )
 }
 

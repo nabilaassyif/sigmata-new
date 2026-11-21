@@ -10,6 +10,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: { navigateFallbackDenylist: [/^\/api(?:\/|$)/] },
       manifest: {
         name: 'SIGMATA Citizen',
         short_name: 'SIGMATA',
@@ -34,11 +35,11 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(import.meta.dirname, './src'),
     },
   },
   server: {
-    port: 5174,
+    port: 5173,
     strictPort: true,
     proxy: {
       '/api': {

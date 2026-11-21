@@ -11,14 +11,17 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.7",
+    "@radix-ui/react-slot": "^1.5.0",
     "@tanstack/react-query": "^5.108.0",
-    "keycloak-js": "^26.2.5",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "lucide-react": "^1.74.0",
     "maplibre-gl": "^6.19.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-hook-form": "^7.92.0",
     "react-router": "^8.5.1",
+    "tailwind-merge": "^3.7.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -30,7 +33,6 @@
     "oxlint": "^1.90.0",
     "tailwindcss": "^4.3.5",
     "typescript": "~7.0.2",
-    "vite": "^8.3.6",
-    "vite-plugin-pwa": "^2.0.0"
+    "vite": "^8.3.6"
   }
 }

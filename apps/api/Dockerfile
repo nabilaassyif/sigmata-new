@@ -6,7 +6,7 @@ COPY . .
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/api ./cmd/server
 
 FROM alpine:3.24 AS runner
-RUN addgroup -S app && adduser -S -G app app
+RUN apk add --no-cache ca-certificates && addgroup -S app && adduser -S -G app app
 USER app
 COPY --from=builder /out/api /usr/local/bin/api
 EXPOSE 8080
