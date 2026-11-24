@@ -27,6 +27,7 @@ type bff struct {
 	apps             map[string]bffApp
 	httpClient       *http.Client
 	inference        *inferenceClient
+	workflow         *workflow
 }
 type loginState struct {
 	Verifier string `json:"verifier"`

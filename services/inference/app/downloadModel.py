@@ -4,6 +4,7 @@ import shutil
 import tempfile
 
 from huggingface_hub import snapshot_download as snapshotDownload
+from filelock import FileLock
 
 
 requiredFiles = (
@@ -28,10 +29,14 @@ def prepare(root: Path, repo: str, revision: str, token: str | None) -> Path:
     if len(revision) != 40 or any(c not in '0123456789abcdef' for c in revision):
         raise ValueError('Model revision must be a full lowercase commit SHA')
     root.mkdir(parents=True, exist_ok=True)
+    with FileLock(str(root / '.download.lock')):
+        return prepareLocked(root, repo, revision, token)
+
+
+def prepareLocked(root: Path, repo: str, revision: str, token: str | None) -> Path:
     destination = root / revision
     if destination.is_dir() and (destination / '.complete').is_file():
         validate(destination)
-        destination.chmod(0o755)
         return destination
     if destination.exists():
         raise RuntimeError('Incomplete destination exists; remove it before retrying')

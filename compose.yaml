@@ -1,4 +1,44 @@
+x-workflow-environment: &workflowEnvironment
+  DATABASE_URL: ${DATABASE_URL:-}
+  DATABASE_HOST: postgres
+  DATABASE_PORT: '5432'
+  DATABASE_NAME: ${POSTGRES_DB:-sigmata}
+  DATABASE_USER: ${POSTGRES_USER:-sigmata}
+  DATABASE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+  DATABASE_SSLMODE: disable
+  REDIS_URL: ${REDIS_URL:-}
+  REDIS_ADDR: redis:6379
+  MUNICIPALITY_ID: ${MUNICIPALITY_ID:-00000000-0000-0000-0000-000000000001}
+  INFERENCE_URL: http://inference:8000
+  GARAGE_ENDPOINT: ${GARAGE_ENDPOINT:-}
+  GARAGE_REGION: ${GARAGE_REGION:-}
+  GARAGE_BUCKET: ${GARAGE_BUCKET:-}
+  GARAGE_ACCESS_KEY: ${GARAGE_ACCESS_KEY:-}
+  GARAGE_SECRET_KEY: ${GARAGE_SECRET_KEY:-}
+  FEATHERLESS_BASE_URL: ${FEATHERLESS_BASE_URL:-https://api.featherless.ai/v1}
+  FEATHERLESS_API_KEY: ${FEATHERLESS_API_KEY:-}
+  FEATHERLESS_MODEL: ${FEATHERLESS_MODEL:-}
+
 services:
+  garage:
+    image: dxflrs/garage:v2.5.0
+    restart: unless-stopped
+    command: ['/garage', 'server', '--single-node', '--default-bucket']
+    environment:
+      GARAGE_DEFAULT_ACCESS_KEY: ${GARAGE_ACCESS_KEY:?Set GARAGE_ACCESS_KEY in .env}
+      GARAGE_DEFAULT_SECRET_KEY: ${GARAGE_SECRET_KEY:?Set GARAGE_SECRET_KEY in .env}
+      GARAGE_DEFAULT_BUCKET: ${GARAGE_BUCKET:?Set GARAGE_BUCKET in .env}
+    configs:
+      - source: garageConfig
+        target: /etc/garage.toml
+    volumes:
+      - garage_data:/var/lib/garage
+    healthcheck:
+      test: ['CMD', '/garage', 'status']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   postgres:
     image: postgis/postgis:17-3.6-alpine
     restart: unless-stopped
@@ -9,7 +49,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -41,49 +81,49 @@ services:
       - keycloak_data:/opt/keycloak/data
       - ./infra/keycloak/sigmata-realm.json:/opt/keycloak/data/import/sigmata-realm.json:ro
 
-  model-init:
-    image: sigmata-inference:local
-    build: ./services/inference
-    user: '0:0'
-    command: ['python', '-m', 'app.downloadModel']
-    environment:
-      GRACE_MODEL_ROOT: /app/model
-      GRACE_MODEL_REPO: LeBabyOx/grace-laksa
-      GRACE_MODEL_REVISION: ${GRACE_MODEL_REVISION:-c0b7110362767a5adcfc66af09011c60a13fa65a}
-      HF_TOKEN: ${HF_TOKEN:-}
-    volumes:
-      - grace_model:/app/model
-
   inference:
     image: sigmata-inference:local
     build: ./services/inference
     restart: unless-stopped
     init: true
     environment:
-      GRACE_ARTIFACTS: /app/model/${GRACE_MODEL_REVISION:-c0b7110362767a5adcfc66af09011c60a13fa65a}
+      GRACE_MODEL_DOWNLOAD: 'true'
+      GRACE_MODEL_ROOT: /app/model
+      GRACE_MODEL_REPO: LeBabyOx/grace-laksa
+      GRACE_MODEL_REVISION: ${GRACE_MODEL_REVISION:-c0b7110362767a5adcfc66af09011c60a13fa65a}
+      HF_TOKEN: ${HF_TOKEN:-}
     volumes:
-      - grace_model:/app/model:ro
-    depends_on:
-      model-init:
-        condition: service_completed_successfully
+      - grace_model:/app/model
     healthcheck:
-      test: ['CMD', 'python', '-c', "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
+      test: ['CMD', 'python', '-c', "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=2)"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 5m
 
-  api:
+  worker:
+    image: sigmata-api:local
     build: ./apps/api
     restart: unless-stopped
     init: true
     environment:
-      DATABASE_HOST: postgres
-      DATABASE_PORT: 5432
-      DATABASE_NAME: ${POSTGRES_DB:-sigmata}
-      DATABASE_USER: ${POSTGRES_USER:-sigmata}
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
-      REDIS_ADDR: redis:6379
-      INFERENCE_URL: http://inference:8000
+      <<: *workflowEnvironment
+      APP_MODE: worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      inference:
+        condition: service_healthy
+
+  api:
+    image: sigmata-api:local
+    build: ./apps/api
+    restart: unless-stopped
+    init: true
+    environment:
+      <<: *workflowEnvironment
       OIDC_ISSUER: http://localhost:8081/realms/sigmata
       OIDC_JWKS_URL: http://keycloak:8080/realms/sigmata/protocol/openid-connect/certs
       OIDC_AUDIENCE: sigmata-api
@@ -109,3 +149,20 @@ volumes:
   redis_data:
   keycloak_data:
   grace_model:
+  garage_data:
+
+configs:
+  garageConfig:
+    content: |
+      metadata_dir = "/var/lib/garage/meta"
+      data_dir = "/var/lib/garage/data"
+      db_engine = "sqlite"
+      replication_factor = 1
+      rpc_bind_addr = "[::]:3901"
+      rpc_public_addr = "127.0.0.1:3901"
+      rpc_secret = "${GARAGE_RPC_SECRET:?Set GARAGE_RPC_SECRET in .env}"
+
+      [s3_api]
+      s3_region = "${GARAGE_REGION:-garage}"
+      api_bind_addr = "[::]:3900"
+      root_domain = ".s3.garage.localhost"

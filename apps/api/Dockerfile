@@ -9,5 +9,7 @@ FROM alpine:3.24 AS runner
 RUN apk add --no-cache ca-certificates && addgroup -S app && adduser -S -G app app
 USER app
 COPY --from=builder /out/api /usr/local/bin/api
+COPY migrations/001Workflow.sql /app/migrations/001Workflow.sql
+WORKDIR /app
 EXPOSE 8080
 ENTRYPOINT ["api"]

@@ -43,9 +43,16 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.model = None
+    modelPath = Path(os.getenv('GRACE_ARTIFACTS', str(Path(__file__).resolve().parents[1] / 'artifacts')))
+    if os.getenv('GRACE_MODEL_DOWNLOAD', '').lower() == 'true':
+        from app.downloadModel import prepare
+        modelRoot = Path(os.environ['GRACE_MODEL_ROOT'])
+        modelPath = prepare(modelRoot, os.environ['GRACE_MODEL_REPO'],
+                            os.environ['GRACE_MODEL_REVISION'], os.getenv('HF_TOKEN'))
+        logger.info('Model artifacts ready at %s', modelPath)
     try:
         from app.graceModel import GraceModel
-        app.state.model = GraceModel(Path(os.getenv('GRACE_ARTIFACTS', str(Path(__file__).resolve().parents[1] / 'artifacts'))))
+        app.state.model = GraceModel(modelPath)
     except Exception:
         logger.exception('GRACE model could not be loaded')
     yield
