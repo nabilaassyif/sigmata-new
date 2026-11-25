@@ -1,0 +1,73 @@
+/* Sigmata Design System Tokens */
+:root {
+  /* Teal Palette (Primary Brand) */
+  --teal-light: #e6f7f7;
+  --teal-light-hover: #daf2f2;
+  --teal-light-active: #b2dede;
+  --teal-normal: #069494;
+  --teal-normal-hover: #058585;
+  --teal-normal-active: #057676;
+  --teal-dark: #045959;
+  --teal-dark-hover: #034343;
+  --teal-dark-active: #023434;
+  --teal-darker: #022222;
+
+  /* Blue Palette */
+  --blue-light: #e8f8fb;
+  --blue-light-hover: #ddf5f9;
+  --blue-light-active: #b9eaf2;
+  --blue-normal: #1cbad6;
+  --blue-normal-hover: #19a7c1;
+  --blue-normal-active: #1695ab;
+  --blue-dark: #117080;
+  --blue-dark-hover: #0d5460;
+  --blue-dark-active: #0a414b;
+  --blue-darker: #072c33;
+
+  /* Neutral & Functional Colors */
+  --bg-app: #f4f8f8;
+  --bg-card: #ffffff;
+  --bg-subtle: #f0f6f6;
+  --bg-canvas: #b8dede;
+  --border-light: #e2eeee;
+  --border-default: #d1e5e5;
+  --border-focus: #069494;
+
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --text-teal: #069494;
+  --text-white: #ffffff;
+
+  /* Typography Scale from Guidelines */
+  --text-2xl: 32px;
+  --lh-2xl: 1.2;
+  --text-xl: 24px;
+  --lh-xl: 1.2;
+  --text-lg: 20px;
+  --lh-lg: 1.2;
+  --text-base: 16px;
+  --lh-base: 1.4;
+  --text-sm: 14px;
+  --lh-sm: 1.4;
+  --text-xs: 12px;
+  --lh-xs: 1.3;
+  --text-2xs: 10px;
+  --lh-2xs: 1.2;
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(6, 148, 148, 0.05);
+  --shadow-card: 0 2px 8px -2px rgba(6, 148, 148, 0.08), 0 1px 4px -1px rgba(0, 0, 0, 0.03);
+  --shadow-drawer: 8px 0 24px -4px rgba(6, 148, 148, 0.15);
+  --shadow-fab: 0 4px 14px 0 rgba(6, 148, 148, 0.35);
+  --shadow-dropdown: 0 10px 25px -5px rgba(6, 148, 148, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+
+  --font-family: 'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
