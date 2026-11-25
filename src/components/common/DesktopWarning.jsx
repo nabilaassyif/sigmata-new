@@ -1,5 +1,5 @@
+
 import { useEffect, useState } from 'react';
-import { SigmataLogo } from '../icons/Icons';
 
 export function DesktopWarning() {
   const [isMobileSize, setIsMobileSize] = useState(() => {
@@ -18,55 +18,35 @@ export function DesktopWarning() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Jika ukuran sudah mobile (<= 640px), jangan tampilkan apa pun
-  if (isMobileSize) {
-    return null;
-  }
+  if (isMobileSize) return null;
 
   return (
-    <div className="sig-desktop-warning" role="alert" aria-live="assertive">
-      <div className="sig-desktop-warning__card">
-        <div className="sig-desktop-warning__logo-wrap">
-          <SigmataLogo size={48} />
+    <div
+      className="sig-desktop-warning"
+      role="alert"
+      aria-live="assertive"
+    >
+      <div className="sig-desktop-warning__content">
+        <div className="sig-desktop-warning__visual">
+          <img
+            src="/public/mascot-sad.webp"
+            alt="Maskot Sigmata"
+            className="sig-desktop-warning__mascot"
+          />
         </div>
 
-        <div className="sig-desktop-warning__pill">
-          KHUSUS TAMPILAN MOBILE
-        </div>
+        <div className="sig-desktop-warning__text">
 
-        <h1 className="sig-desktop-warning__title">
-          Aplikasi Ini Hanya Dapat Dibuka di Perangkat Mobile
-        </h1>
+          <h1 className="sig-desktop-warning__title">
+            Aplikasi ini hanya
+            <br />
+            <span>Dapat Dibuka di Perangkat Mobile</span>
+          </h1>
 
-        <p className="sig-desktop-warning__desc">
-          Website Sigmata dioptimalkan khusus untuk layar ponsel (smartphone) demi
-          memberikan pengalaman pelaporan warga yang cepat dan interaktif.
-        </p>
-
-        <div className="sig-desktop-warning__steps">
-          <div className="sig-desktop-warning__step">
-            <span className="sig-desktop-warning__step-num">1</span>
-            <div className="sig-desktop-warning__step-text">
-              <strong>Buka melalui Smartphone</strong>
-              <p>Akses tautan website ini langsung dari browser di ponsel Anda.</p>
-            </div>
-          </div>
-
-          <div className="sig-desktop-warning__step">
-            <span className="sig-desktop-warning__step-num">2</span>
-            <div className="sig-desktop-warning__step-text">
-              <strong>Atau Kecilkan Layar Browser (Mode Mobile)</strong>
-              <p>
-                Tekan <code>F12</code> lalu pilih ikon <code>Device Mode</code> (atau tekan{' '}
-                <code>Ctrl + Shift + M</code> / Mac: <code>Cmd + Option + M</code>), atau kecilkan
-                lebar jendela browser Anda hingga ukuran ponsel.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="sig-desktop-warning__footer-hint">
-          <span>📱 Website akan terbuka otomatis begitu ukuran layar mendeteksi perangkat mobile.</span>
+          <p className="sig-desktop-warning__desc">
+            Silakan buka halaman ini menggunakan smartphone
+            untuk mendapatkan pengalaman pelaporan warga yang optimal.
+          </p>
         </div>
       </div>
     </div>
