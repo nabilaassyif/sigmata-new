@@ -3,6 +3,7 @@ import './styles/components.css';
 
 import { Drawer } from './components/navigation/Drawer';
 import { DesktopWarning } from './components/common/DesktopWarning';
+import { PwaInstallBanner } from './components/common/PwaInstallBanner';
 import { BerandaPage } from './pages/BerandaPage';
 import { RiwayatPage } from './pages/RiwayatPage';
 import { InputLaporanPage } from './pages/InputLaporanPage';
@@ -102,7 +103,7 @@ export default function App() {
 
   return (
     <div className="sig-app-viewport">
-      {/* Desktop warning overlay on screen >= 1024px */}
+      {/* Strict Blocker: Hanya terbuka jika ukuran layar sudah mobile (<= 640px) */}
       <DesktopWarning />
 
       <div className="sig-mobile-container">
@@ -121,6 +122,9 @@ export default function App() {
 
         {/* Current Active Page */}
         {renderCurrentPage()}
+
+        {/* PWA Floating Install Banner (muncul saat di-scroll sesuai gambar) */}
+        <PwaInstallBanner />
 
         {/* Toast Notification */}
         {toastMessage && (

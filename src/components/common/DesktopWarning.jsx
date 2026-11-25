@@ -1,25 +1,33 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SigmataLogo } from '../icons/Icons';
 
 export function DesktopWarning() {
-  const [dismissed, setDismissed] = useState(false);
+  const [isMobileSize, setIsMobileSize] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth <= 640;
+    }
+    return false;
+  });
 
-  if (dismissed) {
-    return (
-      <div className="sig-desktop-warning-badge" onClick={() => setDismissed(false)}>
-        <span>⚠️ Mode Khusus Mobile Aktif</span>
-        <button type="button" className="sig-desktop-warning-badge__btn">
-          Lihat Info
-        </button>
-      </div>
-    );
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileSize(window.innerWidth <= 640);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Jika ukuran sudah mobile (<= 640px), jangan tampilkan apa pun
+  if (isMobileSize) {
+    return null;
   }
 
   return (
-    <aside className="sig-desktop-warning" aria-label="Peringatan perangkat desktop">
+    <div className="sig-desktop-warning" role="alert" aria-live="assertive">
       <div className="sig-desktop-warning__card">
         <div className="sig-desktop-warning__logo-wrap">
-          <SigmataLogo size={44} />
+          <SigmataLogo size={48} />
         </div>
 
         <div className="sig-desktop-warning__pill">
@@ -27,12 +35,12 @@ export function DesktopWarning() {
         </div>
 
         <h1 className="sig-desktop-warning__title">
-          Halaman Ini Hanya Dapat Dibuka di Perangkat Mobile
+          Aplikasi Ini Hanya Dapat Dibuka di Perangkat Mobile
         </h1>
 
         <p className="sig-desktop-warning__desc">
-          Sigmata dirancang dan dioptimalkan secara khusus untuk pengalaman terbaik
-          melalui layar ponsel (smartphone).
+          Website Sigmata dioptimalkan khusus untuk layar ponsel (smartphone) demi
+          memberikan pengalaman pelaporan warga yang cepat dan interaktif.
         </p>
 
         <div className="sig-desktop-warning__steps">
@@ -40,32 +48,27 @@ export function DesktopWarning() {
             <span className="sig-desktop-warning__step-num">1</span>
             <div className="sig-desktop-warning__step-text">
               <strong>Buka melalui Smartphone</strong>
-              <p>Akses tautan ini langsung dari peramban ponsel pintar Anda.</p>
+              <p>Akses tautan website ini langsung dari browser di ponsel Anda.</p>
             </div>
           </div>
 
           <div className="sig-desktop-warning__step">
             <span className="sig-desktop-warning__step-num">2</span>
             <div className="sig-desktop-warning__step-text">
-              <strong>Mode Simulasi Ponsel (DevTools)</strong>
+              <strong>Atau Kecilkan Layar Browser (Mode Mobile)</strong>
               <p>
-                Tekan <code>F12</code> atau <code>Ctrl + Shift + M</code> (Mac: <code>Cmd + Option + M</code>)
-                lalu pilih ukuran perangkat mobile.
+                Tekan <code>F12</code> lalu pilih ikon <code>Device Mode</code> (atau tekan{' '}
+                <code>Ctrl + Shift + M</code> / Mac: <code>Cmd + Option + M</code>), atau kecilkan
+                lebar jendela browser Anda hingga ukuran ponsel.
               </p>
             </div>
           </div>
         </div>
 
-        <div className="sig-desktop-warning__actions">
-          <button
-            type="button"
-            className="sig-desktop-warning__btn-preview"
-            onClick={() => setDismissed(true)}
-          >
-            Tetap Lanjutkan (Pratinjau Mobile)
-          </button>
+        <div className="sig-desktop-warning__footer-hint">
+          <span>📱 Website akan terbuka otomatis begitu ukuran layar mendeteksi perangkat mobile.</span>
         </div>
       </div>
-    </aside>
+    </div>
   );
 }

@@ -2383,93 +2383,95 @@ body {
 }
 
 /* ============================================================
-   Desktop Warning (Peringatan Khusus Mobile)
-   - Hanya aktif pada layar desktop/laptop (>= 1024px)
-   - Tersembunyi sepenuhnya pada perangkat mobile (< 1024px)
+   Desktop Blocker (Benar-benar Tidak Bisa Dibuka di Desktop/Laptop)
+   - Hanya terbuka jika ukuran layar sudah mobile (<= 640px)
+   - Memblokir 100% jika ukuran layar > 640px
    ============================================================ */
 
-.sig-desktop-warning,
-.sig-desktop-warning-badge {
-  display: none !important;
+/* Tersembunyi pada ukuran mobile (<= 640px) */
+@media (max-width: 640px) {
+  .sig-desktop-warning {
+    display: none !important;
+  }
 }
 
-@media (min-width: 1024px) {
+/* Memblokir penuh pada ukuran > 640px (Laptop / Desktop / Layar Lebar) */
+@media (min-width: 641px) {
   .sig-desktop-warning {
     display: flex !important;
     position: fixed;
     inset: 0;
-    z-index: 99999;
+    z-index: 999999;
     align-items: center;
     justify-content: center;
     padding: 24px;
-    background: rgba(15, 23, 42, 0.72);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: radial-gradient(circle at center, #0a101d 0%, #030712 100%);
     overflow-y: auto;
   }
 
   .sig-desktop-warning__card {
-    background: #ffffff;
-    border-radius: 20px;
-    padding: 36px 32px 30px;
-    max-width: 500px;
+    background: #111827;
+    border-radius: 24px;
+    padding: 40px 32px 32px;
+    max-width: 480px;
     width: 100%;
     text-align: center;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    border: 1px solid var(--border-light);
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(6, 148, 148, 0.25);
     animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .sig-desktop-warning__logo-wrap {
-    margin: 0 auto 16px;
-    width: 60px;
-    height: 60px;
-    border-radius: 14px;
-    background: var(--teal-light);
-    border: 1.5px solid var(--teal-light-active);
+    margin: 0 auto 18px;
+    width: 68px;
+    height: 68px;
+    border-radius: 18px;
+    background: rgba(6, 148, 148, 0.15);
+    border: 1.5px solid rgba(6, 148, 148, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 0 20px rgba(6, 148, 148, 0.3);
   }
 
   .sig-desktop-warning__pill {
     display: inline-block;
     font-size: 11px;
     font-weight: 700;
-    color: var(--teal-normal);
-    background: var(--teal-light);
-    padding: 5px 12px;
+    color: #2dd4bf;
+    background: rgba(45, 212, 191, 0.12);
+    padding: 5px 14px;
     border-radius: 999px;
-    letter-spacing: 0.5px;
-    margin-bottom: 14px;
-    border: 1px solid var(--teal-light-active);
+    letter-spacing: 0.6px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(45, 212, 191, 0.3);
   }
 
   .sig-desktop-warning__title {
-    font-size: 19px;
+    font-size: 20px;
     font-weight: 700;
-    color: var(--text-primary);
+    color: #f9fafb;
     line-height: 1.35;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
   }
 
   .sig-desktop-warning__desc {
     font-size: 13.5px;
-    color: var(--text-secondary);
+    color: #9ca3af;
     line-height: 1.55;
-    margin-bottom: 20px;
+    margin-bottom: 22px;
   }
 
   .sig-desktop-warning__steps {
-    background: #f8fafb;
-    border: 1px solid var(--border-light);
-    border-radius: 12px;
+    background: rgba(17, 24, 39, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
     padding: 16px;
     text-align: left;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    margin-bottom: 22px;
+    gap: 14px;
+    margin-bottom: 20px;
   }
 
   .sig-desktop-warning__step {
@@ -2482,7 +2484,7 @@ body {
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    background: var(--teal-normal);
+    background: #069494;
     color: #ffffff;
     font-size: 11px;
     font-weight: 700;
@@ -2495,89 +2497,246 @@ body {
 
   .sig-desktop-warning__step-text strong {
     font-size: 12.5px;
-    color: var(--text-primary);
+    color: #e5e7eb;
     display: block;
     margin-bottom: 2px;
   }
 
   .sig-desktop-warning__step-text p {
     font-size: 12px;
-    color: var(--text-secondary);
+    color: #9ca3af;
     line-height: 1.45;
     margin: 0;
   }
 
   .sig-desktop-warning__step-text code {
-    background: #e2eeee;
-    color: var(--teal-dark);
-    padding: 2px 5px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #2dd4bf;
+    padding: 2px 6px;
     border-radius: 4px;
     font-size: 11.5px;
     font-family: inherit;
     font-weight: 600;
   }
 
-  .sig-desktop-warning__actions {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  .sig-desktop-warning__footer-hint {
+    padding-top: 6px;
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.4;
   }
+}
 
-  .sig-desktop-warning__btn-preview {
-    background: linear-gradient(to bottom, #069494 0%, #057676 100%);
-    border: 1px solid #057676;
-    color: #ffffff;
-    padding: 11px 18px;
-    border-radius: 10px;
-    font-size: 13.5px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    width: 100%;
-    box-shadow: 0 2px 6px rgba(6, 148, 148, 0.25);
-  }
+/* ============================================================
+   PWA Install Floating Bottom Banner (Sesuai Gambar Desain)
+   - Muncul saat pengguna melakukan scroll
+   ============================================================ */
 
-  .sig-desktop-warning__btn-preview:hover {
-    background: linear-gradient(to bottom, #058585 0%, #045959 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(6, 148, 148, 0.3);
-  }
+.sig-pwa-banner-wrap {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 480px;
+  z-index: 9999;
+  animation: pwaBannerSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
 
-  .sig-desktop-warning__btn-preview:active {
-    transform: translateY(0);
+@keyframes pwaBannerSlideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 24px) scale(0.96);
   }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
 
-  .sig-desktop-warning-badge {
-    display: flex !important;
-    position: fixed;
-    top: 16px;
-    right: 16px;
-    z-index: 99999;
-    background: rgba(6, 148, 148, 0.95);
-    color: #ffffff;
-    border-radius: 999px;
-    padding: 6px 14px;
-    font-size: 11.5px;
-    font-weight: 600;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 4px 12px rgba(6, 148, 148, 0.35);
-    cursor: pointer;
-    backdrop-filter: blur(8px);
-  }
+.sig-pwa-banner {
+  background: #141722;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 22px;
+  padding: 16px 18px 16px 18px;
+  box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
-  .sig-desktop-warning-badge:hover {
-    background: var(--teal-normal-hover);
-  }
+.sig-pwa-banner__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
 
-  .sig-desktop-warning-badge__btn {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: #ffffff;
-    padding: 2px 8px;
-    border-radius: 999px;
-    font-size: 10.5px;
-    font-weight: 700;
-    cursor: pointer;
-  }
+.sig-pwa-banner__icon-glow {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #0f111a;
+  border: 2px solid #8b5cf6;
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.55), inset 0 0 8px rgba(139, 92, 246, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sig-pwa-banner__title-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.sig-pwa-banner__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sig-pwa-banner__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.2px;
+}
+
+.sig-pwa-banner__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #c084fc;
+  background: rgba(168, 85, 247, 0.16);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  border-radius: 999px;
+  padding: 2px 8px;
+  line-height: 1.3;
+}
+
+.sig-pwa-banner__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.sig-pwa-banner__close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sig-pwa-banner__desc {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #9ca3af;
+  margin: 0;
+  text-align: left;
+}
+
+.sig-pwa-banner__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.sig-pwa-banner__btn-install {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: #7c3aed;
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.45);
+  transition: all 0.2s ease;
+}
+
+.sig-pwa-banner__btn-install:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.55);
+}
+
+.sig-pwa-banner__btn-install:active {
+  transform: translateY(0);
+}
+
+.sig-pwa-banner__btn-later {
+  background: rgba(255, 255, 255, 0.08);
+  color: #d1d5db;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.sig-pwa-banner__btn-later:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+/* PWA Guide Modal */
+.sig-pwa-guide-modal {
+  max-width: 440px;
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.sig-pwa-guide-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #f8fafb;
+  border: 1px solid var(--border-light);
+  border-radius: 14px;
+  padding: 16px;
+  text-align: left;
+}
+
+.sig-pwa-guide-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+
+.sig-pwa-guide-step__num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #7c3aed;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
 }
