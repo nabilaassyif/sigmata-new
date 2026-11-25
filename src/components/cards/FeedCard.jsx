@@ -15,7 +15,7 @@ export function FeedCard({
   location = '[Location Name]',
   category = 'Category',
   description = 'Lorem ipsum dolor sit amet consectetur. Ideu iaculis ultricies eget imperdiet. Id nunc odio ornare dolor. Adipiscing felis adipiscing tempus nulla vulputate viverra. Tellus sed commodo et magna turpis.',
-  images = null, // null | 1 image | 2 images | array of images
+  images = null, 
   username = 'Anonymous',
   date = 'DD Month YYYY HH:MM',
   initialUpvotes = 1230,

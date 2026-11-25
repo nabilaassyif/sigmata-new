@@ -2,13 +2,14 @@ import { useState } from 'react';
 import './styles/components.css';
 
 import { Drawer } from './components/navigation/Drawer';
+import { DesktopWarning } from './components/common/DesktopWarning';
 import { BerandaPage } from './pages/BerandaPage';
 import { RiwayatPage } from './pages/RiwayatPage';
 import { InputLaporanPage } from './pages/InputLaporanPage';
 import { PencarianPage } from './pages/PencarianPage';
 
 export default function App() {
-  const [activePage, setActivePage] = useState('beranda'); // 'beranda' | 'riwayat' | 'input' | 'search'
+  const [activePage, setActivePage] = useState('beranda');
   const [prevPage, setPrevPage] = useState('beranda');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [username, setUsername] = useState('username12543');
@@ -101,6 +102,9 @@ export default function App() {
 
   return (
     <div className="sig-app-viewport">
+      {/* Desktop warning overlay on screen >= 1024px */}
+      <DesktopWarning />
+
       <div className="sig-mobile-container">
         {/* Navigation Drawer */}
         <Drawer

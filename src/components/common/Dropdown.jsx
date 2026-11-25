@@ -7,7 +7,7 @@ export function Dropdown({
   value,
   onChange,
   size = 'sm',
-  variant = 'pill', // 'pill' | 'solid-teal' | 'outlined'
+  variant = 'pill', 
   prefix = '',
   align = 'left',
   className = '',

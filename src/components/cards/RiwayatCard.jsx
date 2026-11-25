@@ -29,7 +29,6 @@ export function RiwayatCard({
           <span className="sig-riwayat-card__date">{date}</span>
         </div>
 
-        {/* Body */}
         <div className="sig-riwayat-card__body">
           <p className="sig-riwayat-card__desc">{description}</p>
           <div
@@ -52,10 +51,8 @@ export function RiwayatCard({
           </div>
         </div>
 
-        {/* Divider */}
         <div className="sig-riwayat-card__divider" />
 
-        {/* Footer */}
         <div className="sig-riwayat-card__footer">
           <div className="sig-riwayat-card__status-col">
             <StatusBadge status={status} />
@@ -74,7 +71,6 @@ export function RiwayatCard({
         </div>
       </article>
 
-      {/* Fullscreen Image Modal */}
       <ImageViewerModal
         isOpen={isViewerOpen}
         onClose={() => setIsViewerOpen(false)}

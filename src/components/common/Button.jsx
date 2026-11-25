@@ -1,14 +1,5 @@
 import { ArrowRightIcon } from '../icons/Icons';
 
-/**
- * Button Component with variants:
- * - primary (solid teal)
- * - secondary (outline teal)
- * - light (light teal bg)
- * - dark (dark teal bg)
- * - ghost (transparent)
- * - pill (rounded-full outline or solid)
- */
 export function Button({
   children,
   variant = 'primary',

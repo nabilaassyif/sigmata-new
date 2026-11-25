@@ -13,20 +13,17 @@ export function ImageViewerModal({
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [touchStartX, setTouchStartX] = useState(null);
 
-  // Normalize images array
   const imageList = Array.isArray(images)
     ? images
     : images
     ? [images]
     : [];
 
-  // Adjust state directly during render when initialIndex or isOpen changes
   if (prevConfig.initialIndex !== initialIndex || prevConfig.isOpen !== isOpen) {
     setPrevConfig({ initialIndex, isOpen });
     setCurrentIndex(initialIndex);
   }
 
-  // Lock background scroll when open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -54,7 +51,6 @@ export function ImageViewerModal({
     [imageList.length]
   );
 
-  // Keyboard navigation
   useEffect(() => {
     if (!isOpen) return;
     function handleKeyDown(e) {
@@ -70,7 +66,6 @@ export function ImageViewerModal({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose, handlePrev, handleNext]);
 
-  // Touch Swipe for mobile
   const handleTouchStart = (e) => {
     setTouchStartX(e.touches[0].clientX);
   };
@@ -80,10 +75,8 @@ export function ImageViewerModal({
     const touchEndX = e.changedTouches[0].clientX;
     const diff = touchStartX - touchEndX;
     if (diff > 50) {
-      // Swiped left -> Next
       handleNext();
     } else if (diff < -50) {
-      // Swiped right -> Prev
       handlePrev();
     }
     setTouchStartX(null);
@@ -108,7 +101,6 @@ export function ImageViewerModal({
       aria-modal="true"
       aria-label="Tampilan Layar Penuh Gambar"
     >
-      {/* Top Header Bar */}
       <div
         className="sig-image-viewer-header"
         onClick={(e) => e.stopPropagation()}
@@ -137,7 +129,6 @@ export function ImageViewerModal({
         </div>
       </div>
 
-      {/* Main Image Viewport */}
       <div
         className="sig-image-viewer-body"
         onClick={(e) => e.stopPropagation()}
@@ -172,7 +163,6 @@ export function ImageViewerModal({
           </div>
         )}
 
-        {/* Previous Button (if multiple images) */}
         {imageList.length > 1 && (
           <button
             type="button"
@@ -184,7 +174,6 @@ export function ImageViewerModal({
           </button>
         )}
 
-        {/* Next Button (if multiple images) */}
         {imageList.length > 1 && (
           <button
             type="button"
@@ -197,7 +186,6 @@ export function ImageViewerModal({
         )}
       </div>
 
-      {/* Bottom hint */}
       <div className="sig-image-viewer-hint">
         Ketuk di luar gambar atau tekan tombol X untuk menutup
       </div>
