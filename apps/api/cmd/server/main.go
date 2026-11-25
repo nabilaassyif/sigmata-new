@@ -56,6 +56,7 @@ func newHandler(v verifier, backends ...*bff) http.Handler {
 				register("GET", "/complaints/{id}/photo", app, http.HandlerFunc(w.getPhoto))
 			}
 			register("POST", "/complaints", "citizen", http.HandlerFunc(w.createComplaint))
+			register("GET", "/complaints", "citizen", http.HandlerFunc(w.listMyComplaints))
 			register("GET", "/complaints", "internal", requireRoles(http.HandlerFunc(w.listPendingReview), "operator", "admin"))
 			register("POST", "/complaints/{id}/decision", "internal", requireRoles(http.HandlerFunc(w.decideComplaint), "operator", "admin"))
 			register("GET", "/routing/catalog", "internal", requireRoles(http.HandlerFunc(w.getCatalog), "operator", "admin"))

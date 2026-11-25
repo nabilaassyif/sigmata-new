@@ -300,3 +300,34 @@ func (w *workflow) listPendingReview(rw http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(rw, http.StatusOK, map[string]any{"complaintIds": ids})
 }
+
+func (w *workflow) listMyComplaints(rw http.ResponseWriter, r *http.Request) {
+	id, ok := r.Context().Value(identityKey{}).(*identity)
+	if !ok || id.AuthorizedParty != "citizenWeb" || r.PathValue("app") != "citizen" {
+		http.Error(rw, "forbidden", http.StatusForbidden)
+		return
+	}
+	rows, err := w.db.Query(r.Context(), `SELECT c.id::text,c.status,c.description,c.categoryLabel,a.label,c.suggestedCategory,c.suggestedAgency,c.reviewReason,c.createdAt,c.updatedAt,c.operatorStartedAt,c.forwardedAt,c.photoKey IS NOT NULL FROM laksaComplaints c LEFT JOIN laksaAgencies a ON a.id=c.agencyId WHERE c.citizenSubject=$1 ORDER BY c.createdAt DESC LIMIT 100`, id.Subject)
+	if err != nil {
+		http.Error(rw, "service unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	defer rows.Close()
+	items := []map[string]any{}
+	for rows.Next() {
+		var cid, status, description string
+		var hasPhoto bool
+		var category, agency, suggestedCategory, suggestedAgency, reason *string
+		var created, updated time.Time
+		var operatorStarted, forwarded *time.Time
+		if err = rows.Scan(&cid, &status, &description, &category, &agency, &suggestedCategory, &suggestedAgency, &reason, &created, &updated, &operatorStarted, &forwarded, &hasPhoto); err != nil {
+			break
+		}
+		items = append(items, map[string]any{"complaintId": cid, "status": status, "description": description, "category": category, "agency": agency, "suggestedCategory": suggestedCategory, "suggestedAgency": suggestedAgency, "reviewReason": reason, "createdAt": created, "updatedAt": updated, "operatorStartedAt": operatorStarted, "forwardedAt": forwarded, "hasPhoto": hasPhoto})
+	}
+	if rows.Err() != nil || err != nil {
+		http.Error(rw, "service unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	writeJSON(rw, http.StatusOK, map[string]any{"complaints": items})
+}

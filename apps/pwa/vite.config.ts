@@ -10,11 +10,14 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      includeAssets: ['apple-touch-icon.png'],
       workbox: { navigateFallbackDenylist: [/^\/api(?:\/|$)/] },
       manifest: {
-        name: 'SIGMATA Citizen',
-        short_name: 'SIGMATA',
-        theme_color: '#ffffff',
+        name: 'Sigmata Mobile',
+        short_name: 'Sigmata',
+        description: 'Sigmata Mobile - Platform Pelaporan Publik Berbasis Komunitas',
+        orientation: 'portrait',
+        theme_color: '#069494',
         background_color: '#ffffff',
         display: 'standalone',
         start_url: '/',

@@ -4,8 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "vite --mode mock",
+    "dev:mock": "vite --mode mock",
+    "dev:localbe": "vite --mode localbe",
+    "dev:prodbe": "vite --mode prodbe",
+    "build": "tsc -b && vite build --mode prodbe",
+    "build:mock": "tsc -b && vite build --mode mock",
+    "build:localbe": "tsc -b && vite build --mode localbe",
+    "build:prodbe": "tsc -b && vite build --mode prodbe",
     "lint": "oxlint",
     "preview": "vite preview"
   },

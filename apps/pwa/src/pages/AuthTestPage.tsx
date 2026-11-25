@@ -5,7 +5,7 @@ type SessionStatus = 'loading' | 'signedIn' | 'signedOut' | 'error'
 
 const authPath = '/api/auth/citizen'
 
-function App() {
+export function AuthTestPage() {
   const [session, setSession] = useState<Session | null>(null)
   const [status, setStatus] = useState<SessionStatus>('loading')
 
@@ -72,4 +72,3 @@ function App() {
   )
 }
 
-export default App
