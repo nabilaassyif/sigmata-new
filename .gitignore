@@ -35,7 +35,6 @@ pnpm-debug.log*
 .yarn/install-state.gz
 .turbo/
 .parcel-cache/
-.vercel/
 .netlify/
 __pycache__/
 *.py[cod]
