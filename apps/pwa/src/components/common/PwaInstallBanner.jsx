@@ -13,7 +13,6 @@ export function PwaInstallBanner() {
   });
 
   useEffect(() => {
-    // Cek apakah sudah running dalam mode PWA Standalone (Homescreen)
     const isStandalone =
       window.matchMedia('(display-mode: standalone)').matches ||
       window.navigator.standalone === true;
@@ -22,7 +21,6 @@ export function PwaInstallBanner() {
       return;
     }
 
-    // Tangkap event install prompt native jika ada (Android / Chromium)
     const handleBeforeInstall = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -30,7 +28,6 @@ export function PwaInstallBanner() {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
 
-    // Trigger saat pengguna melakukan scroll
     const handleScroll = () => {
       const isDismissed = sessionStorage.getItem('sig_pwa_dismissed');
       if (isDismissed) return;
@@ -63,7 +60,6 @@ export function PwaInstallBanner() {
       }
       setDeferredPrompt(null);
     } else {
-      // Tampilkan petunjuk pemasangan (terutama untuk iPhone / Safari)
       setShowGuideModal(true);
     }
   };
@@ -74,10 +70,8 @@ export function PwaInstallBanner() {
 
   return (
     <>
-      {/* PWA Floating Bottom Banner (Exact match to requested image) */}
       <div className="sig-pwa-banner-wrap" role="region" aria-label="Install Aplikasi Sigmata">
         <div className="sig-pwa-banner">
-          {/* Top Section: App Icon, Title, Badge, and Close Button */}
           <div className="sig-pwa-banner__header">
             <div className="sig-pwa-banner__icon-glow">
               <SigmataLogo size={36} />
@@ -105,12 +99,10 @@ export function PwaInstallBanner() {
             </button>
           </div>
 
-          {/* Description */}
           <p className="sig-pwa-banner__desc">
             Pasang di homescreen untuk akses cepat tanpa browser bar & mendukung mode offline.
           </p>
 
-          {/* Actions */}
           <div className="sig-pwa-banner__actions">
             <button
               type="button"
