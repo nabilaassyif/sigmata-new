@@ -37,6 +37,7 @@ type loginState struct {
 type session struct {
 	AccessToken  string    `json:"accessToken"`
 	RefreshToken string    `json:"refreshToken"`
+	IDToken      string    `json:"idToken,omitempty"`
 	App          string    `json:"app"`
 	ExpiresAt    time.Time `json:"expiresAt"`
 }
@@ -185,7 +186,7 @@ func (b *bff) callback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "unavailable", 503)
 		return
 	}
-	data, _ = json.Marshal(session{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken, App: name, ExpiresAt: time.Now().Add(8 * time.Hour)})
+	data, _ = json.Marshal(session{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken, IDToken: tokens.IDToken, App: name, ExpiresAt: time.Now().Add(8 * time.Hour)})
 	if b.redis.set(r.Context(), "oidc:session:"+digest(sid), data, 8*time.Hour) != nil {
 		http.Error(w, "unavailable", 503)
 		return
@@ -201,11 +202,29 @@ func (b *bff) authenticateSession(next http.Handler) http.Handler {
 			http.NotFound(w, r)
 			return
 		}
+		b.authenticateAppSession(w, r, r.PathValue("app"), app, next)
+	})
+}
+
+func (b *bff) authenticateAnySession(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for _, candidate := range []string{"internal", "citizen"} {
+			if _, err := r.Cookie("sigmata_session_" + candidate); err == nil {
+				if app, ok := b.apps[candidate]; ok {
+					b.authenticateAppSession(w, r, candidate, app, next)
+					return
+				}
+			}
+		}
+		http.Error(w, "unauthorized", 401)
+	})
+}
+
+func (b *bff) authenticateAppSession(w http.ResponseWriter, r *http.Request, name string, app bffApp, next http.Handler) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead && r.Header.Get("Origin") != app.origin {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
-		name := r.PathValue("app")
 		c, err := r.Cookie("sigmata_session_" + name)
 		if err != nil || len(c.Value) != 43 {
 			http.Error(w, "unauthorized", 401)
@@ -231,13 +250,19 @@ func (b *bff) authenticateSession(next http.Handler) http.Handler {
 			}
 		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), identityKey{}, id)))
-	})
 }
 func (b *bff) current(w http.ResponseWriter, r *http.Request) {
 	id := r.Context().Value(identityKey{}).(*identity)
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
-	_ = json.NewEncoder(w).Encode(map[string]any{"subject": id.Subject, "roles": id.RealmAccess.Roles})
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"subject":           id.Subject,
+		"roles":             id.RealmAccess.Roles,
+		"email":             id.Email,
+		"emailVerified":     id.EmailVerified,
+		"name":              id.Name,
+		"preferredUsername": id.PreferredUsername,
+	})
 }
 
 func (b *bff) refresh(ctx context.Context, key string, old []byte, s *session, app bffApp) (*identity, error) {
@@ -300,6 +325,9 @@ func (b *bff) refresh(ctx context.Context, key string, old []byte, s *session, a
 	if tokens.RefreshToken != "" {
 		s.RefreshToken = tokens.RefreshToken
 	}
+	if tokens.IDToken != "" {
+		s.IDToken = tokens.IDToken
+	}
 	updated, _ := json.Marshal(s)
 	result, err := b.redis.compareAndSet(ctx, key, old, updated)
 	if err != nil || !result {
@@ -336,8 +364,16 @@ func (b *bff) logout(w http.ResponseWriter, r *http.Request) {
 	}
 	b.cookie(w, "sigmata_session_"+name, "", "/", -1)
 	q := url.Values{"client_id": {app.clientID}, "post_logout_redirect_uri": {app.origin + "/"}}
+	if s.IDToken != "" {
+		q.Set("id_token_hint", s.IDToken)
+	}
+	logoutURL := b.issuer + "/protocol/openid-connect/logout?" + q.Encode()
 	w.Header().Set("Cache-Control", "no-store")
-	http.Redirect(w, r, b.issuer+"/protocol/openid-connect/logout?"+q.Encode(), http.StatusSeeOther)
+	if strings.Contains(r.Header.Get("Accept"), "application/json") || r.Header.Get("X-Requested-With") == "fetch" {
+		writeJSON(w, http.StatusOK, map[string]any{"logoutUrl": logoutURL})
+		return
+	}
+	http.Redirect(w, r, logoutURL, http.StatusSeeOther)
 }
 
 type sessionStore interface {

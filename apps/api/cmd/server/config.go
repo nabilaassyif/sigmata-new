@@ -82,7 +82,7 @@ func initWorkflow(ctx context.Context, db *pgxpool.Pool, redisClient *redis.Clie
 	if !strings.HasPrefix(apiURL, "https://") && os.Getenv("ALLOW_INSECURE_FEATHERLESS") != "true" {
 		return nil, errors.New("FEATHERLESS_BASE_URL must use HTTPS")
 	}
-	return &workflow{db: db, redis: redisClient, photos: photos, inference: newInferenceClient(os.Getenv("INFERENCE_URL")), featherless: newFeatherlessClient(apiURL, os.Getenv("FEATHERLESS_API_KEY"), os.Getenv("FEATHERLESS_MODEL")), municipalityId: municipalityId}, nil
+	return &workflow{db: db, redis: redisClient, photos: photos, inference: newInferenceClient(os.Getenv("INFERENCE_URL")), featherless: newFeatherlessClient(apiURL, os.Getenv("FEATHERLESS_API_KEY"), os.Getenv("FEATHERLESS_MODEL")), sla: newSLAEngine(&pgSLAStore{db: db}), municipalityId: municipalityId}, nil
 }
 
 func migrate(ctx context.Context, db *pgxpool.Pool) error {

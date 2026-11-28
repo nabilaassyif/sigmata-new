@@ -53,9 +53,9 @@ export function UploadBox({
           <div className="sig-upload-box__icon-square">
             <UploadTrayIcon size={24} color="var(--teal-dark)" />
           </div>
-          <div className="sig-upload-box__prompt">Ketuk untuk mengunggah foto</div>
+          <div className="sig-upload-box__prompt">Ketuk untuk mengunggah foto bukti</div>
           <div className="sig-upload-box__hint">
-            File PNG, JPG, atau JPEG | Maksimal XX mb
+            Wajib minimal 1 foto (PNG, JPG, JPEG | Maks 5 MB)
           </div>
         </button>
       ) : (

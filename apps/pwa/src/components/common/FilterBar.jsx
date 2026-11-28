@@ -86,6 +86,7 @@ export function BerandaLocationBar({
   ];
 
   const sortOptions = [
+    { value: 'prioritas', label: 'Prioritas' },
     { value: 'terbaru', label: 'Terbaru' },
     { value: 'terpopuler', label: 'Terpopuler' },
     { value: 'terlama', label: 'Terlama' },

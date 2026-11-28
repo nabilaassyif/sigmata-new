@@ -223,3 +223,6 @@ config.local.yml
 .aider.tags.cache.v*
 docs/_build/
 docs/.cache/
+research
+.agent/
+.agents/

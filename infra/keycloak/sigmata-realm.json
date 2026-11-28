@@ -1,6 +1,7 @@
 {
   "realm": "sigmata",
   "enabled": true,
+  "loginTheme": "sigmata",
   "registrationAllowed": true,
   "loginWithEmailAllowed": true,
   "registrationEmailAsUsername": true,

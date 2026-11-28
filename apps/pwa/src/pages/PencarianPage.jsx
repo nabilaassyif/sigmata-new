@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Dropdown } from '../components/common/Dropdown';
 import { FeedCard } from '../components/cards/FeedCard';
 import { FAB } from '../components/common/FAB';
 import { SigmataLogo } from '../components/icons/Icons';
+import { ThemeToggleButton } from '../components/common/ThemeToggleButton';
 import {
   CloseIcon,
   SearchIcon,
@@ -11,56 +12,95 @@ import {
   FilterFunnelIcon,
 } from '../components/icons/Icons';
 
+const DEFAULT_TOPICS = [
+  'Infrastruktur Jalan',
+  'Kebersihan Lingkungan',
+  'Penerangan Jalan',
+  'Drainase & Banjir',
+];
+
+const DEFAULT_LOCATIONS = [
+  'Cipondoh, Kota Tangerang',
+  'Ciledug, Kota Tangerang',
+  'Karawaci, Kota Tangerang',
+  'Gondokusuman, Kota Yogyakarta',
+];
+
 export function PencarianPage({
   onBack,
   onOpenCreateReport,
   onLogoClick,
+  reports = [],
+  userLocation = 'Kota Tangerang',
+  initialKeyword = '',
+  onClearExternalKeyword,
 }) {
-  const [query, setQuery] = useState('');
-  const [activeKeyword, setActiveKeyword] = useState('');
+  const [query, setQuery] = useState(initialKeyword);
+  const [activeKeyword, setActiveKeyword] = useState(initialKeyword);
   const [sort, setSort] = useState('terbaru');
-  const [period, setPeriod] = useState('harian');
+  const [period, setPeriod] = useState('bulanan');
   const [showFilterModal, setShowFilterModal] = useState(false);
 
-  // Trending Topics exactly matching Image 1: [Topik 1], [Topik 2], etc.
-  const trendingTopics = [
-    { id: 1, label: '[Topik 1]' },
-    { id: 2, label: '[Topik 2]' },
-    { id: 3, label: '[Topik 3]' },
-    { id: 4, label: '[Topik 4]' },
-  ];
+  const trendingTopics = useMemo(() => {
+    const seen = new Set();
+    const list = [];
+    for (const item of reports) {
+      const label = (item?.category || '').trim();
+      if (!label) continue;
+      const key = label.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        list.push({ id: `cat-${list.length}`, label });
+      }
+      if (list.length >= 4) break;
+    }
+    for (const fallback of DEFAULT_TOPICS) {
+      if (list.length >= 4) break;
+      const key = fallback.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        list.push({ id: `def-${list.length}`, label: fallback });
+      }
+    }
+    return list;
+  }, [reports]);
 
-  // Related Locations matching Image 1: Kecamatan, Kota 1, etc.
-  const relatedLocations = [
-    { id: 1, label: 'Kecamatan, Kota 1' },
-    { id: 2, label: 'Kecamatan, Kota 2' },
-    { id: 3, label: 'Kecamatan, Kota 3' },
-  ];
+  const relatedLocations = useMemo(() => {
+    const candidates = [userLocation, ...DEFAULT_LOCATIONS];
+    const seen = new Set();
+    const list = [];
+    for (const loc of candidates) {
+      const cleaned = (loc || '').trim();
+      if (!cleaned) continue;
+      const key = cleaned.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        list.push({ id: `loc-${list.length}`, label: cleaned });
+      }
+      if (list.length >= 4) break;
+    }
+    return list;
+  }, [userLocation]);
 
-  const searchResults = [
-    {
-      id: 101,
-      location: 'Location Name',
-      category: 'Category',
-      description:
-        'Lorem ipsum dolor sit amet consectetur. Ideu iaculis ultricies eget imperdiet. Id nunc odio ornare dolor. Adipiscing felis adipiscing tempus nulla vulputate viverra. Tellus sed commodo et magna turpis.',
-      username: 'Anonymous',
-      date: 'DD Month YYYY HH:MM',
-      initialUpvotes: 1230,
-      images: null,
-    },
-    {
-      id: 102,
-      location: 'Location Name',
-      category: 'Category',
-      description:
-        'Lorem ipsum dolor sit amet consectetur. Ideu iaculis ultricies eget imperdiet. Id nunc odio ornare dolor. Adipiscing felis adipiscing tempus nulla vulputate viverra. Tellus sed commodo et magna turpis.',
-      username: 'Anonymous',
-      date: 'DD Month YYYY HH:MM',
-      initialUpvotes: 1230,
-      images: null,
-    },
-  ];
+  const searchResults = useMemo(() => {
+    if (!activeKeyword) return [];
+    const needle = activeKeyword.trim().toLowerCase();
+    const filtered = reports.filter((item) => {
+      const haystack = [item.description, item.category, item.location, item.username]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(needle);
+    });
+
+    filtered.sort((a, b) => {
+      const timeA = a.timestamp || 0;
+      const timeB = b.timestamp || 0;
+      return sort === 'terlama' ? timeA - timeB : timeB - timeA;
+    });
+
+    return filtered;
+  }, [activeKeyword, reports, sort]);
 
   const handleSearchSubmit = (e) => {
     e?.preventDefault();
@@ -77,13 +117,12 @@ export function PencarianPage({
   const clearKeyword = () => {
     setActiveKeyword('');
     setQuery('');
+    onClearExternalKeyword?.();
   };
 
   return (
     <div className="sig-page sig-page--search">
-      {/* Top Header Bar */}
       {!activeKeyword ? (
-        /* Screen 6 of Image 1: Close X button on left + Search Input with Search Icon on right */
         <header className="sig-search-entry-header">
           <button
             type="button"
@@ -122,9 +161,9 @@ export function PencarianPage({
               </button>
             )}
           </form>
+          <ThemeToggleButton variant="icon" />
         </header>
       ) : (
-        /* Screen 7 of Image 1: Close X on left, Sigmata Logo in center, Search icon on right */
         <header className="sig-search-header-image1">
           <button
             type="button"
@@ -144,23 +183,23 @@ export function PencarianPage({
             <SigmataLogo size={32} />
           </button>
 
-          <button
-            type="button"
-            className="sig-navbar__btn"
-            onClick={clearKeyword}
-            aria-label="Pencarian baru"
-          >
-            <SearchIcon size={20} color="var(--text-secondary)" />
-          </button>
+          <div className="sig-navbar__actions">
+            <ThemeToggleButton variant="icon" />
+            <button
+              type="button"
+              className="sig-navbar__btn"
+              onClick={clearKeyword}
+              aria-label="Pencarian baru"
+            >
+              <SearchIcon size={20} color="var(--text-secondary)" />
+            </button>
+          </div>
         </header>
       )}
 
-      {/* Main Content Area */}
       <main className="sig-page__content">
         {!activeKeyword ? (
-          /* Initial State: Ramai Dibicarakan & Lokasi Terkait dengan Anda (Screen 6) */
           <div className="sig-search-suggestions">
-            {/* Section: Ramai Dibicarakan */}
             <section className="sig-search-section">
               <h3 className="sig-search-section__title">Ramai Dibicarakan</h3>
               <ul className="sig-search-section__list">
@@ -183,7 +222,6 @@ export function PencarianPage({
               </ul>
             </section>
 
-            {/* Section: Lokasi Terkait dengan Anda */}
             <section className="sig-search-section">
               <h3 className="sig-search-section__title">
                 Lokasi Terkait dengan Anda
@@ -209,13 +247,11 @@ export function PencarianPage({
             </section>
           </div>
         ) : (
-          /* Search Results (Screen 7) */
           <div className="sig-search-results">
-            {/* Filter Pills Bar: Solid Teal Keyword Chip + Dropdowns + Funnel */}
             <div className="sig-search-results__bar">
               <div className="sig-keyword-chip">
                 <span className="sig-keyword-chip__text">
-                  Kata kunci: "{activeKeyword}"
+                  Kata kunci: &quot;{activeKeyword}&quot;
                 </span>
 
                 <button
@@ -242,6 +278,7 @@ export function PencarianPage({
                   options={[
                     { value: 'harian', label: 'Harian' },
                     { value: 'mingguan', label: 'Mingguan' },
+                    { value: 'bulanan', label: 'Bulanan' },
                   ]}
                   value={period}
                   onChange={setPeriod}
@@ -259,32 +296,59 @@ export function PencarianPage({
               </div>
             </div>
 
-            {/* Result Feed Cards */}
             <div className="sig-cards-list">
-              {searchResults.map((item) => (
-                <FeedCard
-                  key={item.id}
-                  id={item.id}
-                  location={item.location}
-                  category={item.category}
-                  description={item.description}
-                  username={item.username}
-                  date={item.date}
-                  initialUpvotes={item.initialUpvotes}
-                  images={item.images}
-                />
-              ))}
+              {searchResults.length === 0 ? (
+                <div
+                  className="sig-empty-state"
+                  style={{
+                    textAlign: 'center',
+                    padding: '36px 20px',
+                    borderRadius: '16px',
+                  }}
+                >
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                    Tidak ada laporan publik yang cocok dengan kata kunci &quot;{activeKeyword}&quot;.
+                  </p>
+                  <button
+                    type="button"
+                    className="sig-button sig-button--secondary sig-button--sm"
+                    onClick={clearKeyword}
+                  >
+                    Cari Kata Kunci Lain
+                  </button>
+                </div>
+              ) : (
+                searchResults.map((item) => (
+                  <FeedCard
+                    key={item.id}
+                    id={item.id}
+                    location={item.location}
+                    category={item.category}
+                    description={item.description}
+                    username={item.username}
+                    date={item.date}
+                    initialUpvotes={item.initialUpvotes}
+                    initialCorroborations={item.corroborationCount ?? 0}
+                    initialPriorityScore={item.priorityScore ?? 1}
+                    initialSlaDueAt={item.slaDueAt ?? null}
+                    slaSummary={item.slaSummary ?? null}
+                    initialViewerUpvoted={Boolean(item.viewerUpvoted)}
+                    initialViewerCorroborated={Boolean(item.viewerCorroborated)}
+                    initialCorroborationNotes={item.corroborations ?? []}
+                    status={item.status}
+                    images={item.images}
+                  />
+                ))
+              )}
             </div>
           </div>
         )}
       </main>
 
-      {/* Floating Action Button */}
       {activeKeyword && (
         <FAB onClick={onOpenCreateReport} />
       )}
 
-      {/* Filter Modal */}
       {showFilterModal && (
         <div className="sig-modal-backdrop" onClick={() => setShowFilterModal(false)}>
           <div className="sig-modal" onClick={(e) => e.stopPropagation()}>

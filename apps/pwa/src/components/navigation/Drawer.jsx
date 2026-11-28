@@ -1,59 +1,64 @@
 import { useState } from 'react';
 import { HomeIcon, ClockHistoryIcon, UserIcon, ArrowRightIcon } from '../icons/Icons';
 import { Button } from '../common/Button';
+import { ThemeToggleButton } from '../common/ThemeToggleButton';
+import { api } from '../../api';
 
 export function Drawer({
   isOpen,
-  activePage = 'beranda', // 'beranda' | 'riwayat'
+  activePage = 'beranda',
   onSelectPage,
   onClose,
-  username = 'username12543',
-  onUpdateUsername,
+  username = 'Warga',
+  municipalityLabel = '',
+  avatarUrl = null,
 }) {
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [newUsername, setNewUsername] = useState(username);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  const handleSaveProfile = () => {
-    if (newUsername.trim()) {
-      onUpdateUsername?.(newUsername.trim().replace(/^@/, ''));
-    }
-    setShowEditModal(false);
-  };
-
-  const handleLogout = () => {
-    const confirmLogout = window.confirm('Apakah Anda yakin ingin keluar dari akun?');
-    if (confirmLogout) {
-      alert('Anda telah berhasil logout.');
-      onClose?.();
+  const handleConfirmLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await api.logout();
+    } finally {
+      setLoggingOut(false);
     }
   };
 
   return (
     <>
-      {/* Overlay Backdrop */}
       <div
         className={`sig-drawer-backdrop ${isOpen ? 'is-open' : ''}`}
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Drawer Container */}
       <aside className={`sig-drawer ${isOpen ? 'is-open' : ''}`}>
         <div className="sig-drawer__header">
-          <div className="sig-drawer__avatar">
-            <UserIcon size={26} color="#ffffff" />
+          <div className="sig-drawer__avatar" style={{ overflow: 'hidden' }}>
+            {avatarUrl ? (
+              <img src={avatarUrl} alt={username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <UserIcon size={26} color="#ffffff" />
+            )}
           </div>
           <div className="sig-drawer__user-info">
-            <div className="sig-drawer__username">@{username}</div>
+            <div className="sig-drawer__username">{username}</div>
+            {municipalityLabel && (
+              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                {municipalityLabel}
+              </div>
+            )}
             <button
               type="button"
               className="sig-drawer__edit-link"
               onClick={() => {
-                setNewUsername(username);
-                setShowEditModal(true);
+                onSelectPage('profile');
+                onClose?.();
               }}
             >
-              Edit profile
+              Edit profile & preferensi
             </button>
           </div>
         </div>
@@ -64,9 +69,7 @@ export function Drawer({
           <nav className="sig-drawer__nav">
             <button
               type="button"
-              className={`sig-drawer__nav-item ${
-                activePage === 'beranda' ? 'is-active' : ''
-              }`}
+              className={`sig-drawer__nav-item ${activePage === 'beranda' ? 'is-active' : ''}`}
               onClick={() => {
                 onSelectPage('beranda');
                 onClose?.();
@@ -80,9 +83,7 @@ export function Drawer({
 
             <button
               type="button"
-              className={`sig-drawer__nav-item ${
-                activePage === 'riwayat' ? 'is-active' : ''
-              }`}
+              className={`sig-drawer__nav-item ${activePage === 'riwayat' ? 'is-active' : ''}`}
               onClick={() => {
                 onSelectPage('riwayat');
                 onClose?.();
@@ -93,14 +94,29 @@ export function Drawer({
               </span>
               <span className="sig-drawer__nav-label">Riwayat</span>
             </button>
+
+            <button
+              type="button"
+              className={`sig-drawer__nav-item ${activePage === 'profile' ? 'is-active' : ''}`}
+              onClick={() => {
+                onSelectPage('profile');
+                onClose?.();
+              }}
+            >
+              <span className="sig-drawer__nav-icon">
+                <UserIcon size={20} />
+              </span>
+              <span className="sig-drawer__nav-label">Profil Warga</span>
+            </button>
           </nav>
         </div>
 
-        <div className="sig-drawer__footer">
+        <div className="sig-drawer__footer" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <ThemeToggleButton variant="pill" />
           <button
             type="button"
             className="sig-drawer__logout-btn"
-            onClick={handleLogout}
+            onClick={() => setShowLogoutModal(true)}
           >
             <span>Logout</span>
             <ArrowRightIcon size={16} />
@@ -108,44 +124,43 @@ export function Drawer({
         </div>
       </aside>
 
-      {/* Edit Profile Modal */}
-      {showEditModal && (
-        <div className="sig-modal-backdrop" onClick={() => setShowEditModal(false)}>
-          <div className="sig-modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="sig-modal__title">Edit Profil Pengguna</h3>
-            <div style={{ margin: '14px 0' }}>
-              <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                Nama Pengguna (Username)
-              </label>
-              <div style={{ display: 'flex', alignItems: 'center', background: '#f1f5f5', borderRadius: '8px', padding: '0 12px', marginTop: '6px' }}>
-                <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>@</span>
-                <input
-                  type="text"
-                  className="sig-search-header__input"
-                  style={{ padding: '8px 6px', width: '100%' }}
-                  value={newUsername}
-                  onChange={(e) => setNewUsername(e.target.value)}
-                  placeholder="username"
-                  autoFocus
-                />
-              </div>
+      {showLogoutModal && (
+        <div className="sig-modal-backdrop" onClick={() => !loggingOut && setShowLogoutModal(false)}>
+          <div className="sig-modal sig-logout-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="sig-logout-modal__avatar">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={username} />
+              ) : (
+                <UserIcon size={26} color="#ffffff" />
+              )}
             </div>
+            <h3 className="sig-modal__title" style={{ textAlign: 'center', marginBottom: '6px' }}>
+              Keluar dari SIGMATA?
+            </h3>
+            <p className="sig-modal__body" style={{ textAlign: 'center', marginBottom: '16px' }}>
+              Kamu masuk sebagai <strong>{username}</strong>. Kamu bisa masuk kembali kapan saja untuk memantau status & SLA laporanmu.
+            </p>
             <div style={{ display: 'flex', gap: '8px' }}>
               <Button
+                type="button"
                 variant="secondary"
                 size="md"
                 fullWidth
-                onClick={() => setShowEditModal(false)}
+                disabled={loggingOut}
+                onClick={() => setShowLogoutModal(false)}
               >
                 Batal
               </Button>
               <Button
+                type="button"
                 variant="primary"
                 size="md"
                 fullWidth
-                onClick={handleSaveProfile}
+                disabled={loggingOut}
+                onClick={handleConfirmLogout}
+                style={{ backgroundColor: '#dc2626', borderColor: '#dc2626' }}
               >
-                Simpan
+                {loggingOut ? 'Mengeluarkan...' : 'Ya, Keluar'}
               </Button>
             </div>
           </div>

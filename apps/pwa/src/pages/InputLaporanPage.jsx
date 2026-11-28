@@ -28,6 +28,8 @@ export function InputLaporanPage({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editDistrict, setEditDistrict] = useState('Coblong');
   const [editCity, setEditCity] = useState('Bandung');
+  const [coords, setCoords] = useState(null);
+  const [gpsLoading, setGpsLoading] = useState(false);
 
   const reportTypes = [
     { value: 'whistleblower', label: 'Whistleblower' },
@@ -45,20 +47,52 @@ export function InputLaporanPage({
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleCaptureGps = () => {
+    if (!navigator.geolocation) {
+      alert('Browser tidak mendukung geolocation.');
+      return;
+    }
+    setGpsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoords({
+          latitude: Number(pos.coords.latitude.toFixed(6)),
+          longitude: Number(pos.coords.longitude.toFixed(6)),
+        });
+        setGpsLoading(false);
+      },
+      () => {
+        setGpsLoading(false);
+        alert('Gagal mengambil koordinat GPS. Pastikan izin lokasi diaktifkan.');
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
+
   const handleSubmit = async (type) => {
     if (isSubmitting) return;
     if (!description.trim()) {
       alert('Mohon isi deskripsi laporan terlebih dahulu.');
       return;
     }
+    if (images.length === 0 || !images[0]?.file) {
+      alert('Mohon unggah minimal 1 foto dokumentasi sebagai bukti laporan.');
+      return;
+    }
 
     let created;
     setIsSubmitting(true);
     try {
-      // The API accepts a single JPEG/PNG photo per complaint.
+      // The API accepts a single mandatory JPEG/PNG photo per complaint.
       created = await api.createComplaint({
         description: description.trim(),
-        photo: images[0]?.file ?? null,
+        photo: images[0].file,
+        latitude: coords?.latitude ?? null,
+        longitude: coords?.longitude ?? null,
+        isPublic: type === 'post',
+        district: editDistrict,
+        city: editCity,
+        complaintType: reportType === 'whistleblower' ? 'oversight' : 'non_oversight',
       });
     } catch (error) {
       setIsSubmitting(false);
@@ -67,17 +101,31 @@ export function InputLaporanPage({
     }
     setIsSubmitting(false);
 
+    const nowIso = new Date().toISOString();
     const newReport = {
       id: created.complaintId,
       category: 'LAPORAN WARGA',
       location: location,
-      description: description,
+      district: editDistrict,
+      city: editCity,
+      description: description.trim(),
       username: reportType === 'whistleblower' ? 'Whistleblower' : reportType === 'anonim' ? 'Anonymous' : '@username12543',
       date: 'Baru saja',
-      initialUpvotes: 1,
-      images: images.length > 0 ? images.map((img) => img.url) : null,
+      timestamp: Date.now(),
+      initialUpvotes: created.upvoteCount ?? 1,
+      upvoteCount: created.upvoteCount ?? 1,
+      corroborationCount: created.corroborationCount ?? 0,
+      priorityScore: created.priorityScore ?? 2.38,
+      slaDueAt: created.slaDueAt || null,
+      slaSummary: created.slaSummary || null,
+      viewerUpvoted: true,
+      viewerCorroborated: false,
+      images: images.map((img) => img.url),
       status: 'Dalam Proses',
+      rawStatus: 'pending',
       isPublic: type === 'post',
+      events: [{ eventType: 'submitted', actor: 'citizen', details: {}, createdAt: nowIso }],
+      corroborations: [],
     };
 
     onSubmitSuccess?.(newReport, type === 'post');
@@ -94,7 +142,6 @@ export function InputLaporanPage({
 
   return (
     <div className={`sig-page sig-page--form ${isFullscreenTextarea ? 'is-fullscreen-editor' : ''}`}>
-      {/* Header (Image 1: Close X, Input Laporan, Help ?) */}
       <Navbar
         type="form"
         title="Input Laporan"
@@ -103,7 +150,6 @@ export function InputLaporanPage({
       />
 
       <main className="sig-page__content sig-form-content">
-        {/* Fullscreen Description Mode (Screen 4 of Image 1) */}
         {isFullscreenTextarea ? (
           <div className="sig-fullscreen-desc-wrap">
             <label className="sig-form__label">
@@ -134,9 +180,7 @@ export function InputLaporanPage({
             </div>
           </div>
         ) : (
-          /* Normal Form Layout (Screen 3 & 5 of Image 1) */
           <>
-            {/* Two-Column Header: Lapor sebagai | Lokasimu */}
             <div className="sig-form__meta-split">
               <div className="sig-form__meta-col">
                 <span className="sig-form__meta-label">Lapor sebagai</span>
@@ -159,7 +203,6 @@ export function InputLaporanPage({
                 </div>
               </div>
 
-              {/* Vertical Divider */}
               <div className="sig-form__meta-divider" />
 
               <div className="sig-form__meta-col">
@@ -172,10 +215,14 @@ export function InputLaporanPage({
                   <span className="sig-form__location-text">{location}</span>
                   <PencilEditIcon size={16} color="var(--teal-normal)" />
                 </button>
+                {coords && (
+                  <span style={{ fontSize: '10px', color: 'var(--teal-dark)' }}>
+                    GPS: {coords.latitude}, {coords.longitude}
+                  </span>
+                )}
               </div>
             </div>
 
-            {/* Field: Deskripsi *) */}
             <div className="sig-form__field">
               <label className="sig-form__label" htmlFor="deskripsi-input">
                 Deskripsi <span className="sig-form__req">*)</span>
@@ -206,33 +253,38 @@ export function InputLaporanPage({
               </div>
             </div>
 
-            {/* Field: Upload Dokumentasi */}
             <div className="sig-form__field">
-              <label className="sig-form__label">Upload Dokumentasi</label>
+              <label className="sig-form__label">
+                Upload Dokumentasi (Bukti Foto Wajib) <span className="sig-form__req">*)</span>
+              </label>
               <UploadBox
                 images={images}
                 onAddImages={handleAddImages}
                 onRemoveImage={handleRemoveImage}
               />
+              {images.length === 0 && (
+                <p style={{ fontSize: '11.5px', color: '#dc2626', marginTop: '6px', fontWeight: 500 }}>
+                  * Dokumentasi foto wajib dilampirkan agar laporan dapat diproses dan diteruskan.
+                </p>
+              )}
             </div>
 
-            {/* Bottom Actions */}
             <div className="sig-form__actions">
               <Button
                 variant="primary"
                 size="lg"
                 fullWidth
-                disabled={isSubmitting}
+                disabled={isSubmitting || images.length === 0}
                 onClick={() => handleSubmit('post')}
               >
-                Laporkan dan posting
+                {isSubmitting ? 'Mengirim...' : 'Laporkan dan posting'}
               </Button>
 
               <Button
                 variant="secondary"
                 size="lg"
                 fullWidth
-                disabled={isSubmitting}
+                disabled={isSubmitting || images.length === 0}
                 onClick={() => handleSubmit('private')}
               >
                 Laporkan saja
@@ -242,7 +294,6 @@ export function InputLaporanPage({
         )}
       </main>
 
-      {/* Info Whistleblower Modal */}
       {showInfoModal && (
         <div className="sig-modal-backdrop" onClick={() => setShowInfoModal(false)}>
           <div className="sig-modal" onClick={(e) => e.stopPropagation()}>
@@ -263,16 +314,15 @@ export function InputLaporanPage({
         </div>
       )}
 
-      {/* Help Modal */}
       {showHelpModal && (
         <div className="sig-modal-backdrop" onClick={() => setShowHelpModal(false)}>
           <div className="sig-modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="sig-modal__title">Panduan Input Laporan</h3>
             <p className="sig-modal__body">
               1. <strong>Lapor sebagai</strong>: Pilih mode identitas pelaporan.<br />
-              2. <strong>Lokasimu</strong>: Pastikan lokasi sesuai dengan kejadian.<br />
+              2. <strong>Lokasimu</strong>: Pastikan lokasi dan GPS sesuai kejadian agar warga sekitar dapat mengonfirmasi.<br />
               3. <strong>Deskripsi</strong>: Tuliskan fakta kejadian secara runtut dan jelas.<br />
-              4. <strong>Dokumentasi</strong>: Unggah foto pendukung berformat JPG/PNG.
+              4. <strong>Dokumentasi (Wajib)</strong>: Unggah minimal 1 foto bukti berformat JPG/PNG.
             </p>
             <Button
               variant="primary"
@@ -286,7 +336,6 @@ export function InputLaporanPage({
         </div>
       )}
 
-      {/* Location Modal */}
       {showLocationModal && (
         <div className="sig-modal-backdrop" onClick={() => setShowLocationModal(false)}>
           <div className="sig-modal" onClick={(e) => e.stopPropagation()}>
@@ -314,6 +363,14 @@ export function InputLaporanPage({
                   placeholder="Contoh: Bandung"
                 />
               </div>
+              <button
+                type="button"
+                className="sig-button sig-button--secondary sig-button--sm"
+                onClick={handleCaptureGps}
+                disabled={gpsLoading}
+              >
+                {gpsLoading ? 'Mengambil GPS...' : coords ? `GPS Terpasang (${coords.latitude}, ${coords.longitude})` : 'Sematkan Koordinat GPS Saya'}
+              </button>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <Button

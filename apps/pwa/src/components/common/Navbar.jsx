@@ -6,6 +6,7 @@ import {
   QuestionBareIcon,
   ArrowLeftIcon,
 } from '../icons/Icons';
+import { ThemeToggleButton } from './ThemeToggleButton';
 
 export function Navbar({
   type = 'default', // 'default' | 'form' | 'search' | 'detail'
@@ -30,14 +31,19 @@ export function Navbar({
           <CloseIcon size={20} color="var(--text-secondary)" />
         </button>
         <h3 className="sig-navbar__title">{title || 'Input Laporan'}</h3>
-        <button
-          type="button"
-          onClick={onHelpClick}
-          className="sig-navbar__btn"
-          aria-label="Bantuan"
-        >
-          <QuestionBareIcon size={20} color="var(--text-muted)" />
-        </button>
+        <div className="sig-navbar__actions">
+          <ThemeToggleButton variant="icon" />
+          {onHelpClick && (
+            <button
+              type="button"
+              onClick={onHelpClick}
+              className="sig-navbar__btn"
+              aria-label="Bantuan"
+            >
+              <QuestionBareIcon size={20} color="var(--text-muted)" />
+            </button>
+          )}
+        </div>
       </header>
     );
   }
@@ -54,7 +60,10 @@ export function Navbar({
           <ArrowLeftIcon size={20} color="var(--text-primary)" />
         </button>
         <h1 className="sig-navbar__title">{title}</h1>
-        <div className="sig-navbar__right">{rightAction}</div>
+        <div className="sig-navbar__right sig-navbar__actions">
+          {rightAction}
+          <ThemeToggleButton variant="icon" />
+        </div>
       </header>
     );
   }
@@ -79,14 +88,17 @@ export function Navbar({
         <SigmataLogo size={32} />
       </button>
 
-      <button
-        type="button"
-        onClick={onSearchClick}
-        className="sig-navbar__btn"
-        aria-label="Cari Laporan"
-      >
-        <SearchIcon size={20} color="var(--text-secondary)" />
-      </button>
+      <div className="sig-navbar__actions">
+        <ThemeToggleButton variant="icon" />
+        <button
+          type="button"
+          onClick={onSearchClick}
+          className="sig-navbar__btn"
+          aria-label="Cari Laporan"
+        >
+          <SearchIcon size={20} color="var(--text-secondary)" />
+        </button>
+      </div>
     </header>
   );
 }

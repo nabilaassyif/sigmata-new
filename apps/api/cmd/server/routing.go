@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -126,5 +127,18 @@ func (w *workflow) decideComplaint(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "service unavailable", 503)
 		return
 	}
-	writeJSON(rw, 200, map[string]any{"complaintId": id, "status": "forwarded"})
+	var slaSummary *complaintSLASummary
+	if w.sla != nil {
+		slaSummary, _ = w.sla.onDistributedToLiaison(r.Context(), id, "", &agencyId, &input.Agency, time.Now().UTC(), identity.Subject, "operator:"+id)
+		if slaSummary != nil && len(slaSummary.ActiveClocks) > 0 {
+			earliest := slaSummary.ActiveClocks[0].DueAt
+			for _, clk := range slaSummary.ActiveClocks[1:] {
+				if clk.DueAt.Before(earliest) {
+					earliest = clk.DueAt
+				}
+			}
+			_, _ = w.db.Exec(r.Context(), `UPDATE laksaComplaints SET slaDueAt=$2 WHERE id=$1`, id, earliest)
+		}
+	}
+	writeJSON(rw, 200, map[string]any{"complaintId": id, "status": "forwarded", "slaSummary": slaSummary})
 }

@@ -40,7 +40,7 @@ func (s *photoStore) put(ctx context.Context, key string, data []byte, mime stri
 }
 
 func (s *photoStore) get(ctx context.Context, key string) ([]byte, error) {
-	if !strings.HasPrefix(key, "complaints/") {
+	if !strings.HasPrefix(key, "complaints/") && !strings.HasPrefix(key, "avatars/") {
 		return nil, errors.New("invalid object key")
 	}
 	object, err := s.client.GetObject(ctx, s.bucket, key, minio.GetObjectOptions{})

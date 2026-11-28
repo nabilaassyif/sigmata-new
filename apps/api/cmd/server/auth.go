@@ -17,9 +17,13 @@ import (
 
 type identity struct {
 	jwt.RegisteredClaims
-	Type            string `json:"typ"`
-	AuthorizedParty string `json:"azp"`
-	RealmAccess     struct {
+	Type              string `json:"typ"`
+	AuthorizedParty   string `json:"azp"`
+	Email             string `json:"email"`
+	EmailVerified     bool   `json:"email_verified"`
+	Name              string `json:"name"`
+	PreferredUsername string `json:"preferred_username"`
+	RealmAccess       struct {
 		Roles []string `json:"roles"`
 	} `json:"realm_access"`
 }

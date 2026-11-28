@@ -102,7 +102,22 @@ func (w *workflow) finish(ctx context.Context, c *queuedComplaint, lease, catego
 	if err != nil {
 		return err
 	}
-	return tx.Commit(ctx)
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	if forward && w.sla != nil {
+		summary, slaErr := w.sla.onDistributedToLiaison(ctx, c.id, "", agencyId, &agency, time.Now().UTC(), "worker", "worker:"+c.id+":"+lease)
+		if slaErr == nil && summary != nil && len(summary.ActiveClocks) > 0 {
+			earliest := summary.ActiveClocks[0].DueAt
+			for _, clk := range summary.ActiveClocks[1:] {
+				if clk.DueAt.Before(earliest) {
+					earliest = clk.DueAt
+				}
+			}
+			_, _ = w.db.Exec(ctx, `UPDATE laksaComplaints SET slaDueAt=$2 WHERE id=$1`, c.id, earliest)
+		}
+	}
+	return nil
 }
 
 func (w *workflow) retry(ctx context.Context, c *queuedComplaint, lease, reason string) error {
@@ -178,7 +193,7 @@ func (w *workflow) recover(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	rows, err := w.db.Query(ctx, "SELECT id::text FROM laksaComplaints WHERE status='pending' AND nextAttemptAt<=now() ORDER BY updatedAt LIMIT 100")
+	rows, err := w.db.Query(ctx, "SELECT id::text FROM laksaComplaints WHERE status='pending' AND nextAttemptAt<=now() ORDER BY priorityScore DESC, updatedAt ASC LIMIT 100")
 	if err != nil {
 		return err
 	}

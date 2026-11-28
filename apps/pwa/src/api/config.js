@@ -11,8 +11,13 @@ function resolveBaseUrl() {
     return url.replace(/\/+$/, '');
   }
   if (API_MODE === 'localbe') {
-    // Empty => same-origin '/api', which the Vite dev server proxies to the local Go API.
-    return (import.meta.env.VITE_LOCAL_API_URL || '').replace(/\/+$/, '');
+    const raw = (import.meta.env.VITE_LOCAL_API_URL || '').replace(/\/+$/, '');
+    // Always prefer same-origin '/api' when running on the Vite dev server (:5173)
+    // so Vite proxies '/api' without CORS issues and preserves HttpOnly session cookies.
+    if (typeof window !== 'undefined' && window.location.port === '5173' && (!raw || raw.startsWith('http://localhost:8080') || raw.startsWith('http://127.0.0.1:8080'))) {
+      return '';
+    }
+    return raw;
   }
   return '';
 }
